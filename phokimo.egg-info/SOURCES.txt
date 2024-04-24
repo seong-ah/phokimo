@@ -1,0 +1,14 @@
+LICENSE
+README.md
+pyproject.toml
+setup.py
+phokimo/__init__.py
+phokimo/main.py
+phokimo.egg-info/PKG-INFO
+phokimo.egg-info/SOURCES.txt
+phokimo.egg-info/dependency_links.txt
+phokimo.egg-info/entry_points.txt
+phokimo.egg-info/requires.txt
+phokimo.egg-info/top_level.txt
+phokimo/src/ODEmodel.py
+phokimo/src/__init__.py

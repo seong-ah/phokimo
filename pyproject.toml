@@ -1,0 +1,93 @@
+[project]
+name = "phokimo"
+description = "A tool for photokinetic modeling"
+authors = [
+    {name = "Gereon Feldmann",email="feldmann@pc.rwth-aachen.de"},
+]
+maintainers = [
+    {name = "Gereon Feldmann"},
+    {name = "Seong-Ah Choi"},
+]
+dependencies = [
+    "matplotlib",
+    "numpy",
+    "scipy",
+    "typing_extensions",
+]
+
+requires-python = ">=3.8"
+readme = "README.md"
+license = {file = "LICENSE"}
+keywords = ["photochemistry, science, simulation, modeling"]
+classifiers = [
+    "Development Status :: 2 - Pre-Alpha",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: GNU General Public License v3 (GPLv3)",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Scientific/Engineering :: Chemistry",
+    "Topic :: Scientific/Engineering :: Physics",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+]
+
+dynamic = ["version"]
+
+[project.urls]
+Repo = "https://git.rwth-aachen.de/bannwarthlab/phokimo"
+
+[project.optional-dependencies]
+doc = [
+    "sphinx",
+    "sphinx_rtd_theme",
+    "myst-parser"
+]
+dev = [
+    "mypy",
+    "pre-commit",
+    "pytest",
+    "pytest-qt",
+    "pytest-xvfb",
+    "cython",
+    "pytest-cov",
+    "pytest-split",
+    "ruff",
+    "phokimo[doc]",
+]
+
+[tool.setuptools.dynamic]
+version = {"attr" = "phokimo.__version__"}
+
+[project.scripts]
+phokimo = "phokimo.main:main"
+
+[tool.ruff]
+target-version = "py39"
+line-length = 121
+lint.select = ["ALL"]
+lint.ignore = [
+  "ANN101", # Missing type annotation for `self` in method
+  "ERA001", # Found commented-out code
+  "D203",   # 1 blank line required before class docstring (incompatible with D211)
+  "D213",   # Multi-line docstring summary should start at the second line (incompatible with D212)
+  "FBT001", # Boolean-typed positional argument in function definition
+  "FBT002", # Boolean default positional argument in function definition
+  "INP001", # File {name} is part or an implicit namespace package. Add an `__init__.py`.
+  "PTH100", # `os.path.abspath()` should be replaced by `Path.resolve()`
+  "PTH123", # `open()` should be replaced by `Path.open()`
+  "S101",   # Use of assert detected
+  ]
+lint.isort.required-imports = ["from __future__ import annotations"]
+lint.pydocstyle.convention = "google"
+
+[tool.mypy]
+ignore_missing_imports = true
+no_implicit_optional = false
+
+[tool.codespell]
+ignore-words-list = "nd, te"
+check-filenames = true
