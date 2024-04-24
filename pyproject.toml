@@ -41,11 +41,7 @@ dynamic = ["version"]
 Repo = "https://git.rwth-aachen.de/bannwarthlab/phokimo"
 
 [project.optional-dependencies]
-doc = [
-    "sphinx",
-    "sphinx_rtd_theme",
-    "myst-parser"
-]
+
 dev = [
     "mypy",
     "pre-commit",
@@ -63,7 +59,7 @@ dev = [
 version = {"attr" = "phokimo.__version__"}
 
 [project.scripts]
-phokimo = "phokimo.main:main"
+phokimo = "phokimo.__main__:main"
 
 [tool.ruff]
 target-version = "py39"

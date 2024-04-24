@@ -8,6 +8,6 @@ setup(
     name="phokimo",
     packages=find_packages(),
     entry_points={
-        "console_scripts": ["phokimo = phokimo.main:main"],
+        "console_scripts": ["phokimo = phokimo.__main__:main"],
     },
 )
