@@ -27,7 +27,7 @@ def main() -> None:
     # Example 2
     table = {0: 1, 1: 0}
 
-    rates = np.array([[0.0, 1.0], [3.0, 0.0]])
+    rates = np.array([[0.0, 3.0], [3.0, 0.0]])
 
     func = partial(construct_ode, table=table, rates=rates)
     conc = odeint(func, start_conc, time)
