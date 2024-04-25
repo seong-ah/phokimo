@@ -8,7 +8,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 from scipy.integrate import odeint
 
-from phokimo.src.ode_builder import construct_ode, hard_coded_ode
+from phokimo.src.ode_builder import construct_ode
 
 
 def main() -> None:
@@ -17,12 +17,12 @@ def main() -> None:
     time = np.linspace(0, 10, 1000)
 
     # Example 1
-    rates = np.array([2.0])
-    func = partial(hard_coded_ode, k=rates)
-    conc = odeint(func, start_conc, time)
+    # rates = np.array([2.0])
+    # func = partial(hard_coded_ode, k=rates)
+    # conc = odeint(func, start_conc, time)
 
-    plt.plot(time, conc)
-    plt.show()
+    # plt.plot(time, conc)
+    # plt.show()
 
     # Example 2
     table = {0: 1, 1: 0}
