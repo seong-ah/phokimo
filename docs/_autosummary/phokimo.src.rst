@@ -1,4 +1,4 @@
-phokimo.src
+﻿phokimo.src
 ===========
 
 .. automodule:: phokimo.src
@@ -28,4 +28,5 @@ phokimo.src
    :recursive:
 
    phokimo.src.ode_builder
+   phokimo.src.rate_constants
 
