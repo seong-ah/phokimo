@@ -27,6 +27,7 @@
    :toctree:
    :recursive:
 
+   phokimo.src.io
    phokimo.src.ode_builder
    phokimo.src.rate_constants
 
