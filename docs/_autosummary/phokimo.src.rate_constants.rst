@@ -21,7 +21,7 @@
       EinsteinCoeffientA12
       EmissionTheory
       EyringEquation
-      RateSetter
+      RateCalculator
       ReactionTheory
       RelaxationTheory
    
