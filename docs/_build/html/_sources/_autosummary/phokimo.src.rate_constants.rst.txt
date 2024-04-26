@@ -1,4 +1,4 @@
-phokimo.src.rate\_constants
+﻿phokimo.src.rate\_constants
 ===========================
 
 .. automodule:: phokimo.src.rate_constants
@@ -9,17 +9,21 @@ phokimo.src.rate\_constants
 
    
    
-   .. rubric:: Functions
+   
+
+   
+   
+   .. rubric:: Classes
 
    .. autosummary::
    
-      einstein_coefficient_A12
-      eyring_equation
-      n_modes_relaxation
-   
-   
-
-   
+      AdhocRelaxation
+      EinsteinCoeffientA12
+      EmissionTheory
+      EyringEquation
+      RateSetter
+      ReactionTheory
+      RelaxationTheory
    
    
 
