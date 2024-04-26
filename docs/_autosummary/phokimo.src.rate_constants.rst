@@ -1,4 +1,4 @@
-﻿phokimo.src.rate\_constants
+phokimo.src.rate\_constants
 ===========================
 
 .. automodule:: phokimo.src.rate_constants
