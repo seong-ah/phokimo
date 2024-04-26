@@ -49,9 +49,13 @@
 <li class="toctree-l2 current"><a class="reference internal" href="phokimo.src.html">phokimo.src</a><ul class="current">
 <li class="toctree-l3"><a class="reference internal" href="phokimo.src.ode_builder.html">phokimo.src.ode_builder</a></li>
 <li class="toctree-l3 current"><a class="current reference internal" href="#">phokimo.src.rate_constants</a><ul>
-<li class="toctree-l4"><a class="reference internal" href="#phokimo.src.rate_constants.eyring_equation"><code class="docutils literal notranslate"><span class="pre">eyring_equation()</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="#phokimo.src.rate_constants.einstein_coefficient_A12"><code class="docutils literal notranslate"><span class="pre">einstein_coefficient_A12()</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="#phokimo.src.rate_constants.n_modes_relaxation"><code class="docutils literal notranslate"><span class="pre">n_modes_relaxation()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#phokimo.src.rate_constants.RelaxationTheory"><code class="docutils literal notranslate"><span class="pre">RelaxationTheory</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#phokimo.src.rate_constants.EmissionTheory"><code class="docutils literal notranslate"><span class="pre">EmissionTheory</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#phokimo.src.rate_constants.ReactionTheory"><code class="docutils literal notranslate"><span class="pre">ReactionTheory</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#phokimo.src.rate_constants.EyringEquation"><code class="docutils literal notranslate"><span class="pre">EyringEquation</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#phokimo.src.rate_constants.EinsteinCoeffientA12"><code class="docutils literal notranslate"><span class="pre">EinsteinCoeffientA12</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#phokimo.src.rate_constants.AdhocRelaxation"><code class="docutils literal notranslate"><span class="pre">AdhocRelaxation</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#phokimo.src.rate_constants.RateCalculator"><code class="docutils literal notranslate"><span class="pre">RateCalculator</span></code></a></li>
 </ul>
 </li>
 </ul>
@@ -89,23 +93,140 @@
   <section id="module-phokimo.src.rate_constants">
 <span id="phokimo-src-rate-constants"></span><h1>phokimo.src.rate_constants<a class="headerlink" href="#module-phokimo.src.rate_constants" title="Link to this heading"></a></h1>
 <p>A library to store a variety of rate constants.</p>
-<p class="rubric">Functions</p>
+<p class="rubric">Classes</p>
 <table class="autosummary longtable docutils align-default">
 <tbody>
-<tr class="row-odd"><td><p><a class="reference internal" href="#phokimo.src.rate_constants.einstein_coefficient_A12" title="phokimo.src.rate_constants.einstein_coefficient_A12"><code class="xref py py-obj docutils literal notranslate"><span class="pre">einstein_coefficient_A12</span></code></a>(nu, f12[, g1, g2])</p></td>
-<td><p>Rate constant for spontaneous emission derived by Einstein coeffs.</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#phokimo.src.rate_constants.AdhocRelaxation" title="phokimo.src.rate_constants.AdhocRelaxation"><code class="xref py py-obj docutils literal notranslate"><span class="pre">AdhocRelaxation</span></code></a>()</p></td>
+<td><p>A theory for the computation of relaxtion rates.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#phokimo.src.rate_constants.eyring_equation" title="phokimo.src.rate_constants.eyring_equation"><code class="xref py py-obj docutils literal notranslate"><span class="pre">eyring_equation</span></code></a>(dG[, T, kappa])</p></td>
-<td><p>Compute the rate constant using the Eyring equation.</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#phokimo.src.rate_constants.EinsteinCoeffientA12" title="phokimo.src.rate_constants.EinsteinCoeffientA12"><code class="xref py py-obj docutils literal notranslate"><span class="pre">EinsteinCoeffientA12</span></code></a>()</p></td>
+<td><p>A theory for the computation of emission rates.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#phokimo.src.rate_constants.n_modes_relaxation" title="phokimo.src.rate_constants.n_modes_relaxation"><code class="xref py py-obj docutils literal notranslate"><span class="pre">n_modes_relaxation</span></code></a>(dE, n_modes, n_atoms[, T])</p></td>
-<td><p>Ad hoc ansatz for the approximation of the relaxation of structure to the ground state.</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#phokimo.src.rate_constants.EmissionTheory" title="phokimo.src.rate_constants.EmissionTheory"><code class="xref py py-obj docutils literal notranslate"><span class="pre">EmissionTheory</span></code></a>()</p></td>
+<td><p>This is an abstract class for the declaration of common operations for the emission theories.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#phokimo.src.rate_constants.EyringEquation" title="phokimo.src.rate_constants.EyringEquation"><code class="xref py py-obj docutils literal notranslate"><span class="pre">EyringEquation</span></code></a>()</p></td>
+<td><p>A theory for the computation of reaction rates.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#phokimo.src.rate_constants.RateCalculator" title="phokimo.src.rate_constants.RateCalculator"><code class="xref py py-obj docutils literal notranslate"><span class="pre">RateCalculator</span></code></a>(reaction_theory, ...)</p></td>
+<td><p>Interface to define the varying theories that should be used for the computation of the rates.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#phokimo.src.rate_constants.ReactionTheory" title="phokimo.src.rate_constants.ReactionTheory"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ReactionTheory</span></code></a>()</p></td>
+<td><p>This is an abstract class for the declaration of common operations for the reaction theories.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#phokimo.src.rate_constants.RelaxationTheory" title="phokimo.src.rate_constants.RelaxationTheory"><code class="xref py py-obj docutils literal notranslate"><span class="pre">RelaxationTheory</span></code></a>()</p></td>
+<td><p>This is an abstract class for the declaration of common operations for the relaxation theories.</p></td>
 </tr>
 </tbody>
 </table>
-<dl class="py function">
-<dt class="sig sig-object py" id="phokimo.src.rate_constants.eyring_equation">
-<span class="sig-prename descclassname"><span class="pre">phokimo.src.rate_constants.</span></span><span class="sig-name descname"><span class="pre">eyring_equation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dG</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">T</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">298.15</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">kappa</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">float</span></span></span><a class="headerlink" href="#phokimo.src.rate_constants.eyring_equation" title="Link to this definition"></a></dt>
+<dl class="py class">
+<dt class="sig sig-object py" id="phokimo.src.rate_constants.RelaxationTheory">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">phokimo.src.rate_constants.</span></span><span class="sig-name descname"><span class="pre">RelaxationTheory</span></span><a class="headerlink" href="#phokimo.src.rate_constants.RelaxationTheory" title="Link to this definition"></a></dt>
+<dd><p>This is an abstract class for the declaration of common operations for the relaxation theories.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="phokimo.src.rate_constants.RelaxationTheory.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#phokimo.src.rate_constants.RelaxationTheory.__init__" title="Link to this definition"></a></dt>
+<dd><p>Instantiate the relaxation theory object.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="phokimo.src.rate_constants.RelaxationTheory.compute_rate">
+<em class="property"><span class="pre">abstract</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">compute_rate</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dE</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_modes</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_atoms</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">T</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">298.15</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">float</span></span></span><a class="headerlink" href="#phokimo.src.rate_constants.RelaxationTheory.compute_rate" title="Link to this definition"></a></dt>
+<dd><p>Abstract method for a relaxtion rate.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>dE</strong> (<em>float</em>) – Energy difference</p></li>
+<li><p><strong>n_modes</strong> (<em>float</em>) – number of involved normal modes</p></li>
+<li><p><strong>n_atoms</strong> (<em>float</em>) – number of atoms</p></li>
+<li><p><strong>T</strong> (<em>float</em><em>, </em><em>optional</em>) – temperature. Defaults to 298.15.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>_description_</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>float</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="phokimo.src.rate_constants.EmissionTheory">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">phokimo.src.rate_constants.</span></span><span class="sig-name descname"><span class="pre">EmissionTheory</span></span><a class="headerlink" href="#phokimo.src.rate_constants.EmissionTheory" title="Link to this definition"></a></dt>
+<dd><p>This is an abstract class for the declaration of common operations for the emission theories.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="phokimo.src.rate_constants.EmissionTheory.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#phokimo.src.rate_constants.EmissionTheory.__init__" title="Link to this definition"></a></dt>
+<dd><p>Instantiate the emission theory object.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="phokimo.src.rate_constants.EmissionTheory.compute_rate">
+<em class="property"><span class="pre">abstract</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">compute_rate</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">nu</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">f12</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">g1</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">g2</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">float</span></span></span><a class="headerlink" href="#phokimo.src.rate_constants.EmissionTheory.compute_rate" title="Link to this definition"></a></dt>
+<dd><p>Abstract method for the computation of emission rates.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>nu</strong> (<em>float</em>) – wave length (nm)</p></li>
+<li><p><strong>f12</strong> (<em>float</em>) – oscillator strength (-)</p></li>
+<li><p><strong>g1</strong> (<em>float</em><em>, </em><em>optional</em>) – degeneracy state 1. Defaults to 1.</p></li>
+<li><p><strong>g2</strong> (<em>float</em><em>, </em><em>optional</em>) – degeneracy state 2. Defaults to 1.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>rate</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>float</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="phokimo.src.rate_constants.ReactionTheory">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">phokimo.src.rate_constants.</span></span><span class="sig-name descname"><span class="pre">ReactionTheory</span></span><a class="headerlink" href="#phokimo.src.rate_constants.ReactionTheory" title="Link to this definition"></a></dt>
+<dd><p>This is an abstract class for the declaration of common operations for the reaction theories.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="phokimo.src.rate_constants.ReactionTheory.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#phokimo.src.rate_constants.ReactionTheory.__init__" title="Link to this definition"></a></dt>
+<dd><p>Instantiate the reaction theory object.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="phokimo.src.rate_constants.ReactionTheory.compute_rate">
+<em class="property"><span class="pre">abstract</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">compute_rate</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dG</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">T</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">298.15</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">kappa</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">float</span></span></span><a class="headerlink" href="#phokimo.src.rate_constants.ReactionTheory.compute_rate" title="Link to this definition"></a></dt>
+<dd><p>Abstract method for the computation of reaction rates.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>dG</strong> (<em>float</em>) – _description_</p></li>
+<li><p><strong>T</strong> (<em>float</em><em>, </em><em>optional</em>) – _description_. Defaults to 298.15.</p></li>
+<li><p><strong>kappa</strong> (<em>float</em><em>, </em><em>optional</em>) – _description_. Defaults to 1.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>reaction rate</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>float</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="phokimo.src.rate_constants.EyringEquation">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">phokimo.src.rate_constants.</span></span><span class="sig-name descname"><span class="pre">EyringEquation</span></span><a class="headerlink" href="#phokimo.src.rate_constants.EyringEquation" title="Link to this definition"></a></dt>
+<dd><p>A theory for the computation of reaction rates.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="phokimo.src.rate_constants.EyringEquation.compute_rate">
+<span class="sig-name descname"><span class="pre">compute_rate</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dG</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">T</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">298.15</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">kappa</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">float</span></span></span><a class="headerlink" href="#phokimo.src.rate_constants.EyringEquation.compute_rate" title="Link to this definition"></a></dt>
 <dd><p>Compute the rate constant using the Eyring equation.</p>
 <p>Eyring: <a class="reference external" href="https://doi.org/10.1039/TF9353100875">https://doi.org/10.1039/TF9353100875</a></p>
 <p>Eyring and Polyani: <a class="reference external" href="https://doi.org/10.1063/1.1749604">https://doi.org/10.1063/1.1749604</a></p>
@@ -128,9 +249,15 @@
 </dl>
 </dd></dl>
 
-<dl class="py function">
-<dt class="sig sig-object py" id="phokimo.src.rate_constants.einstein_coefficient_A12">
-<span class="sig-prename descclassname"><span class="pre">phokimo.src.rate_constants.</span></span><span class="sig-name descname"><span class="pre">einstein_coefficient_A12</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">nu</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">f12</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">g1</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">g2</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">float</span></span></span><a class="headerlink" href="#phokimo.src.rate_constants.einstein_coefficient_A12" title="Link to this definition"></a></dt>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="phokimo.src.rate_constants.EinsteinCoeffientA12">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">phokimo.src.rate_constants.</span></span><span class="sig-name descname"><span class="pre">EinsteinCoeffientA12</span></span><a class="headerlink" href="#phokimo.src.rate_constants.EinsteinCoeffientA12" title="Link to this definition"></a></dt>
+<dd><p>A theory for the computation of emission rates.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="phokimo.src.rate_constants.EinsteinCoeffientA12.compute_rate">
+<span class="sig-name descname"><span class="pre">compute_rate</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">nu</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">f12</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">g1</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">g2</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">float</span></span></span><a class="headerlink" href="#phokimo.src.rate_constants.EinsteinCoeffientA12.compute_rate" title="Link to this definition"></a></dt>
 <dd><p>Rate constant for spontaneous emission derived by Einstein coeffs.</p>
 <p>Equation from Table I: <a class="reference external" href="https://doi.org/10.1119/1.12937">https://doi.org/10.1119/1.12937</a></p>
 <p>Original work: A. Einstein, Zur Quantentheorie der Strahlung,</p>
@@ -155,12 +282,19 @@
 </dl>
 </dd></dl>
 
-<dl class="py function">
-<dt class="sig sig-object py" id="phokimo.src.rate_constants.n_modes_relaxation">
-<span class="sig-prename descclassname"><span class="pre">phokimo.src.rate_constants.</span></span><span class="sig-name descname"><span class="pre">n_modes_relaxation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dE</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_modes</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_atoms</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">T</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">298.15</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">float</span></span></span><a class="headerlink" href="#phokimo.src.rate_constants.n_modes_relaxation" title="Link to this definition"></a></dt>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="phokimo.src.rate_constants.AdhocRelaxation">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">phokimo.src.rate_constants.</span></span><span class="sig-name descname"><span class="pre">AdhocRelaxation</span></span><a class="headerlink" href="#phokimo.src.rate_constants.AdhocRelaxation" title="Link to this definition"></a></dt>
+<dd><p>A theory for the computation of relaxtion rates.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="phokimo.src.rate_constants.AdhocRelaxation.compute_rate">
+<span class="sig-name descname"><span class="pre">compute_rate</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dE</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_modes</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_atoms</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">T</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">298.15</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">float</span></span></span><a class="headerlink" href="#phokimo.src.rate_constants.AdhocRelaxation.compute_rate" title="Link to this definition"></a></dt>
 <dd><p>Ad hoc ansatz for the approximation of the relaxation of structure to the ground state.</p>
 <p>This is a self developed approach for the description of the relaxation of vibronically excited states.
-It is based on the Eyring equation and considers, that a relaxation occurs through a relaxation of the normal mode.
+It is based on the Eyring equation and considers #
+that a relaxation occurs through a relaxation of the normal mode.
 It depends on the excess energy between the ground state and its initial state.</p>
 <div class="math notranslate nohighlight">
 \[k_\mathrm{relax} = \dfrac{k_\mathrm{B}T}{h}
@@ -181,6 +315,71 @@ It depends on the excess energy between the ground state and its initial state.<
 <dd class="field-odd"><p>float</p>
 </dd>
 </dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="phokimo.src.rate_constants.RateCalculator">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">phokimo.src.rate_constants.</span></span><span class="sig-name descname"><span class="pre">RateCalculator</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">reaction_theory:</span> <span class="pre">~phokimo.src.rate_constants.ReactionTheory</span> <span class="pre">=</span> <span class="pre">&lt;phokimo.src.rate_constants.EyringEquation</span> <span class="pre">object&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">emission_theory:</span> <span class="pre">~phokimo.src.rate_constants.EmissionTheory</span> <span class="pre">=</span> <span class="pre">&lt;phokimo.src.rate_constants.EinsteinCoeffientA12</span> <span class="pre">object&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">relaxation_theory:</span> <span class="pre">~phokimo.src.rate_constants.RelaxationTheory</span> <span class="pre">=</span> <span class="pre">&lt;phokimo.src.rate_constants.AdhocRelaxation</span> <span class="pre">object&gt;</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#phokimo.src.rate_constants.RateCalculator" title="Link to this definition"></a></dt>
+<dd><p>Interface to define the varying theories that should be used for the computation of the rates.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="phokimo.src.rate_constants.RateCalculator.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">reaction_theory:</span> <span class="pre">~phokimo.src.rate_constants.ReactionTheory</span> <span class="pre">=</span> <span class="pre">&lt;phokimo.src.rate_constants.EyringEquation</span> <span class="pre">object&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">emission_theory:</span> <span class="pre">~phokimo.src.rate_constants.EmissionTheory</span> <span class="pre">=</span> <span class="pre">&lt;phokimo.src.rate_constants.EinsteinCoeffientA12</span> <span class="pre">object&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">relaxation_theory:</span> <span class="pre">~phokimo.src.rate_constants.RelaxationTheory</span> <span class="pre">=</span> <span class="pre">&lt;phokimo.src.rate_constants.AdhocRelaxation</span> <span class="pre">object&gt;</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#phokimo.src.rate_constants.RateCalculator.__init__" title="Link to this definition"></a></dt>
+<dd><p>Sets the default theories for the computation of the rate constants of different systems.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>reaction_theory</strong> (<a class="reference internal" href="#phokimo.src.rate_constants.ReactionTheory" title="phokimo.src.rate_constants.ReactionTheory"><em>ReactionTheory</em></a><em>, </em><em>optional</em>) – Theory for Reactions. Defaults to EyringEquation().</p></li>
+<li><p><strong>emission_theory</strong> (<a class="reference internal" href="#phokimo.src.rate_constants.EmissionTheory" title="phokimo.src.rate_constants.EmissionTheory"><em>EmissionTheory</em></a><em>, </em><em>optional</em>) – Theory for Emission. Defaults to EinsteinCoeffientA12().</p></li>
+<li><p><strong>relaxation_theory</strong> (<a class="reference internal" href="#phokimo.src.rate_constants.RelaxationTheory" title="phokimo.src.rate_constants.RelaxationTheory"><em>RelaxationTheory</em></a><em>, </em><em>optional</em>) – Theory for Relaxation. Defaults to AdhocRelaxation().</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="phokimo.src.rate_constants.RateCalculator.reaction_theory">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">reaction_theory</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="#phokimo.src.rate_constants.ReactionTheory" title="phokimo.src.rate_constants.ReactionTheory"><span class="pre">ReactionTheory</span></a></em><a class="headerlink" href="#phokimo.src.rate_constants.RateCalculator.reaction_theory" title="Link to this definition"></a></dt>
+<dd><p>Property attribute of the reaction theory in the rate calculator.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>reaction theory</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference internal" href="#phokimo.src.rate_constants.ReactionTheory" title="phokimo.src.rate_constants.ReactionTheory">ReactionTheory</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="phokimo.src.rate_constants.RateCalculator.emission_theory">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">emission_theory</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="#phokimo.src.rate_constants.EmissionTheory" title="phokimo.src.rate_constants.EmissionTheory"><span class="pre">EmissionTheory</span></a></em><a class="headerlink" href="#phokimo.src.rate_constants.RateCalculator.emission_theory" title="Link to this definition"></a></dt>
+<dd><p>Property attribute of the emission theory in the rate calculator.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>emission theory</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference internal" href="#phokimo.src.rate_constants.EmissionTheory" title="phokimo.src.rate_constants.EmissionTheory">EmissionTheory</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="phokimo.src.rate_constants.RateCalculator.relaxation_theory">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">relaxation_theory</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="#phokimo.src.rate_constants.RelaxationTheory" title="phokimo.src.rate_constants.RelaxationTheory"><span class="pre">RelaxationTheory</span></a></em><a class="headerlink" href="#phokimo.src.rate_constants.RateCalculator.relaxation_theory" title="Link to this definition"></a></dt>
+<dd><p>Property attribute of the relaxation theory in the rate calculator.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>relaxation theory</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference internal" href="#phokimo.src.rate_constants.RelaxationTheory" title="phokimo.src.rate_constants.RelaxationTheory">RelaxationTheory</a></p>
+</dd>
+</dl>
+</dd></dl>
+
 </dd></dl>
 
 </section>
