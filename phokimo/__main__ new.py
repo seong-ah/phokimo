@@ -28,7 +28,6 @@ def main() -> None:
     # Read the TOML file
     with open(toml_file_path, "r") as f:
         toml_data = toml.load(f)
-    print(toml_data)
 
     # Generate start_conc
     num_states = len(toml_data['states'])
@@ -36,8 +35,6 @@ def main() -> None:
     for state, conc in toml_data['concentrations'].items():
             order = int(state[-1])
             start_conc[order] = conc
-    
-    print(start_conc)
 
     # Generate state_list from toml
     state_list_name = []
@@ -47,9 +44,6 @@ def main() -> None:
         order = int(state[-1])
         state_list_name.append(state_name)
         state_list_num.append(order)
-
-    print(state_list_name)
-    print(state_list_num)
 
     time = np.linspace(0, 10, 1000)
 
@@ -72,9 +66,6 @@ def main() -> None:
         graph_table_name.append(reaction_species)
         graph_table_num.append(tuple(linkage))
 
-    print(graph_table_name)
-    print(graph_table_num)
-
     """ Graph creation """
 
     # Create a graph
@@ -91,7 +82,6 @@ def main() -> None:
     
     # Convert the graph to a dictionary of lists
     table = nx.to_dict_of_lists(num_graph)
-    print(table)
 
     # Visualize the graph
     nx.draw(name_graph, with_labels=True, font_weight='bold')
@@ -113,7 +103,6 @@ def main() -> None:
             for const, value in toml_data['rate_constants'].items():
                 if start == int(const[1]) and end == int(const[2]):
                     rates[start][end] = value
-    print(rates)
 
     func = partial(construct_ode, table=table, rates=rates)
     conc = odeint(func, start_conc, time)

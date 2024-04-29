@@ -44,8 +44,8 @@ def construct_ode(concentration: np.ndarray, t: np.ndarray, table: dict, rates: 
 
     for init, final in table.items(): # init = key, final = value (dic) #originally forward and reverse independently but can be together
         for target_final in final:
-            odes[init] -= rates[init][target_final] * concentration[init]
-            odes[target_final] += rates[init][target_final] * concentration[init]
+            odes[init] -= rates[init, target_final] * concentration[init]
+            odes[target_final] += rates[init, target_final] * concentration[init]
     return tuple(odes)
 
 def general_ode(concentration: np.ndarray, t: np.ndarray, table: dict, rates: np.ndarray) -> tuple[float, ...]:
