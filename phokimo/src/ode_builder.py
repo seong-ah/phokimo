@@ -42,8 +42,28 @@ def construct_ode(concentration: np.ndarray, t: np.ndarray, table: dict, rates: 
     """
     odes = [0.0 for _ in concentration]
 
+    for init, final in table.items(): # init = key, final = value (dic) #originally forward and reverse independently but can be together
+        for target_final in final:
+            odes[init] -= rates[init][target_final] * concentration[init]
+            odes[target_final] += rates[init][target_final] * concentration[init]
+    return tuple(odes)
+
+def general_ode(concentration: np.ndarray, t: np.ndarray, table: dict, rates: np.ndarray) -> tuple[float, ...]:
+    """A tool to automatically construct ODEs with considering reverse reactions.
+
+    Args:
+        concentration (np.ndarray): starting concentration
+        t (np.ndarray): time
+        table (dict): table with information of possible reaction
+        rates (np.ndarray): reaction rates as N x N adjacency matrix. N: number of structures.
+
+    Returns:
+        tuple: concentration profile for ODEs.
+    """
+    odes = [0.0 for _ in concentration]
+    
     for init, final in table.items():
-        odes[init] -= rates[init, final] * concentration[init]
-        odes[final] += rates[init, final] * concentration[init]
+        odes[init] -= (rates[init, final] * concentration[init] - rates[final, init] * concentration[final])
+        odes[final] += (rates[init, final] * concentration[init] - rates[final, init] * concentration[final])
 
     return tuple(odes)
