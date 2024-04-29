@@ -1,4 +1,5 @@
-exclude: ^(examples)
+exclude: ^(docs)
+
 
 ci:
   autoupdate_schedule: weekly

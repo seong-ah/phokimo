@@ -77,6 +77,8 @@ lint.ignore = [
   "PTH100", # `os.path.abspath()` should be replaced by `Path.resolve()`
   "PTH123", # `open()` should be replaced by `Path.open()`
   "S101",   # Use of assert detected
+  "N803",   # Argument names should be lowercase
+  "D301",   # Use `r"""` if any backslashes in a docstring
   ]
 lint.isort.required-imports = ["from __future__ import annotations"]
 lint.pydocstyle.convention = "google"

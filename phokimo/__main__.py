@@ -9,6 +9,7 @@ import numpy as np
 from scipy.integrate import odeint
 
 from phokimo.src.ode_builder import construct_ode, hard_coded_ode, general_ode
+from phokimo.src.rate_constants import RateCalculator
 
 
 def main() -> None:
@@ -31,6 +32,13 @@ def main() -> None:
     #table = {0: 1} #possible reactions 0 to 1 and 1 to 0
 
     #rates = np.array([[0.0, 3.0], [3.0, 0.0]]) #Forward & reverse reaction constants as a matrix form
+    rates = np.array([[0.0, 1.0], [1.0, 0.0]])
+
+    # An example on how to use the Rate setter
+    rate_comp = RateCalculator()
+
+    rates[0, 1] = rate_comp.reaction_theory.compute_rate(dG=70e3)
+    rates[1, 0] = rate_comp.reaction_theory.compute_rate(dG=70e3)
 
     table = {2: 4, 4: 0, 2: 5, 5: 3, 3: 0, 3: 1}
     rates = np.array([[0.0, 0.0, 0.0, 0.0, 0.0, 0.0], [0.0, 0.0, 0.0, 4.0, 0.0, 0.0], [0.0, 0.0, 0.0, 0.0, 6.0, 1.0], [3.0, 3.0, 0.0, 0.0, 0.0, 0.0], [6.0, 0.0, 0.0, 0.0, 0.0, 0.0], [0.0, 0.0, 0.0, 3.0, 0.0, 0.0]])
