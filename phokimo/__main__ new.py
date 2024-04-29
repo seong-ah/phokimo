@@ -53,13 +53,9 @@ def main() -> None:
 
     for reaction, linkage in toml_data['reactions'].items():
         string1 = str(linkage[0])
-        print(linkage[0])
-        print(string1)
         string2 = str(linkage[1])
         target1 = "state" + string1
         target2 = "state" + string2
-        print(target1)
-        print(target2)
         species_name1 = toml_data['states'][target1]
         species_name2 = toml_data['states'][target2]
         reaction_species = tuple([species_name1, species_name2])
