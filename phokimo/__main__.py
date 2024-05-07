@@ -21,9 +21,9 @@ from phokimo.src.toml_reader import TomlReader
 from phokimo.src.ode_builder import general_ode, construct_ode
 
 def main() -> None:
-    """Run the application."""
+    """ Run the application. """
 
-    """ Read data from toml file and set-up ode calculation """
+    """ Read data from toml file """
 
     # Get the directory of the currently executing Python script
     current_dir = os.path.dirname(os.path.abspath(__file__))
@@ -33,23 +33,27 @@ def main() -> None:
 
     toml_data = TomlReader(toml_file_path)
 
-    # Generate start_conc and state_list from toml
+    # General data of the molecule
     total_atoms = float(toml_data._total_atoms())
     normal_modes = float(toml_data._normal_modes())
 
-    num_states = len(toml_data.data['state'])
-    start_conc = np.zeros(num_states)
+    """Generate start_conc, state_lists, reaction graph table, and rate constant matrix to set-up the ode calculation"""
 
-    state_list_name = ["name"] * num_states
-    state_list_num = np.zeros(num_states, dtype=int)
-    state_list_energy = np.zeros(num_states)
-    state_list_oscil = np.zeros(num_states)
+    num_states = len(toml_data.data['state']) # number of total states
+    start_conc = np.zeros(num_states) # list of starting concentration
+
+    state_list_name = ["name"] * num_states # name of the state list
+    state_list_num = np.zeros(num_states, dtype=int) # numbering of the state list
+    state_list_energy = np.zeros(num_states) # energy of the state list (J/mol)
+    state_list_oscil = np.zeros(num_states) # oscillation strength of the state list
+
+    graph_table_name = [] # name of the reaction connection as a tuple in a list (Ex. ('TAB*', 'ci2'))
+    graph_table_num = [] # numbering of the reaction connection as a tuple in a list (Ex. (2, 4))
 
     dim = (num_states, num_states)
     rates = np.zeros(dim)
 
-    graph_table_name = []
-    graph_table_num = []
+    """Extract the values of each states from toml file"""
 
     for i in range(num_states):
         state = str(i)
@@ -60,21 +64,25 @@ def main() -> None:
         init_num = toml_data._state_num(i)
         state_list_num[i] = init_num
 
-        if init_name.endswith('*'):
+        # Assume that the file structure is /folder_name/tc.out from current directory
+
+        if init_name.endswith('*'): # Exception for the Franck-Condon point to use the ground state calculation
             folder_name = init_name[:-1]
             file_path = os.path.join(current_dir, folder_name, 'tc.out')
         else:
             file_path = os.path.join(current_dir, init_name, 'tc.out')
 
         terachem_file = TeraChemOutputReader(file_path)
-        result = terachem_file.ci_energy(max_roots = 2) #Assume that only singlet states
+        result = terachem_file.ci_energy() # Assume that only singlet states
         target_spin_state = toml_data._target_spin_state(i)
         hartree_energy = result[0][target_spin_state]
-        energy = (2625.5 * (10 ** 3)) * hartree_energy #J/mol
+        energy = (2625.5 * (10 ** 3)) * hartree_energy # hartree to J/mol
         state_list_energy[i] = energy
         if target_spin_state != 0:
-            oscilstr = result[0][target_spin_state - 1]
+            oscilstr = result[1][target_spin_state-1]
             state_list_oscil[i] = oscilstr
+
+    """Extract the information of the reaction connection and calculate the rate constants"""
 
     for i in range(num_states):            
         for j in range(num_states):
@@ -111,9 +119,11 @@ def main() -> None:
                     rate_constant = rate_formula.relaxation_theory.compute_rate(dE, normal_modes, total_atoms)
                     rates[init_num][final_num] = rate_constant
 
+                # emission would be added later
+
     time = np.linspace(0, 10, 1000)
 
-    #Graph creation
+    """Graph creation"""
 
     # Create a graph
     name_graph = nx.Graph()
@@ -137,7 +147,7 @@ def main() -> None:
     nx.draw(num_graph, with_labels=True, font_weight='bold')
     plt.show()
 
-    # Solving ode
+    """Solving ode"""
 
     func = partial(construct_ode, table=table, rates=rates)
     conc = odeint(func, start_conc, time)
