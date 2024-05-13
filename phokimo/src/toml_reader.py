@@ -74,7 +74,7 @@ class TomlReader:
         if type(state) == int:
             return state
         if type(state) == list:
-            return state[0]
+            return state[1]
 
     def _state_name(self, num: int) -> str:
         """Extract the state name.

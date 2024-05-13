@@ -68,19 +68,20 @@ def main() -> None:
 
         if init_name.endswith('*'): # Exception for the Franck-Condon point to use the ground state calculation
             folder_name = init_name[:-1]
-            file_path = os.path.join(current_dir, folder_name, 'tc.out')
+            file_path = os.path.join(current_dir, folder_name, 'sp', 'tc.out')
         else:
-            file_path = os.path.join(current_dir, init_name, 'tc.out')
+            file_path = os.path.join(current_dir, init_name, 'sp', 'tc.out')
 
-        terachem_file = TeraChemOutputReader(file_path)
-        result = terachem_file.ci_energy() # Assume that only singlet states
-        target_spin_state = toml_data._target_spin_state(i)
-        hartree_energy = result[0][target_spin_state]
-        energy = (2625.5 * (10 ** 3)) * hartree_energy # hartree to J/mol
-        state_list_energy[i] = energy
-        if target_spin_state != 0:
-            oscilstr = result[1][target_spin_state-1]
-            state_list_oscil[i] = oscilstr
+        if os.path.exists(file_path):
+            terachem_file = TeraChemOutputReader(file_path)
+            result = terachem_file.ci_energy() # Assume that only singlet states
+            target_spin_state = toml_data._target_spin_state(i)
+            hartree_energy = result[0][target_spin_state]
+            energy = (2625.5 * (10 ** 3)) * hartree_energy # hartree to J/mol
+            state_list_energy[i] = energy
+            if target_spin_state != 0:
+                oscilstr = result[1][target_spin_state-1]
+                state_list_oscil[i] = oscilstr
 
     """Extract the information of the reaction connection and calculate the rate constants"""
 
@@ -103,9 +104,15 @@ def main() -> None:
                 graph_table_num.append(toml_data._graph_edge(ts_num, ts_final_num))
                 
                 rate_formula = RateCalculator()
-                dE = state_list_energy[ts_num] - state_list_energy[init_num]
-                rate_constant = rate_formula.reaction_theory.compute_rate(dE)
-                rates[init_num][ts_final_num] = rate_constant
+                if ts_num == 6: #temporary if loop for S1bar condition
+                    dE = 15.438 * (10 ** 3) #J/mol
+                    rate_constant = rate_formula.reaction_theory.compute_rate(dE)
+                    rates[init_num][ts_final_num] = rate_constant
+                
+                else:
+                    dE = state_list_energy[ts_num] - state_list_energy[init_num]
+                    rate_constant = rate_formula.reaction_theory.compute_rate(dE)
+                    rates[init_num][ts_final_num] = rate_constant
 
             if toml_data._final_existence(i, j) == True:
                 final_name = toml_data._final_name(i, j)
