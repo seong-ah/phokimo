@@ -2,27 +2,22 @@
 
 from __future__ import annotations
 
+import os
 from functools import partial
 
 import matplotlib.pyplot as plt
-import numpy as np
 import networkx as nx
-import toml
-import os
-
+import numpy as np
 from scipy.integrate import odeint
 
 from phokimo.src.io.terachem import TeraChemOutputReader
-
-from phokimo.src.rate_constants import RateCalculator, ReactionTheory, EyringEquation, RelaxationTheory, AdhocRelaxation
-
+from phokimo.src.ode_builder import construct_ode
+from phokimo.src.rate_constants import RateCalculator
 from phokimo.src.toml_reader import TomlReader
 
-from phokimo.src.ode_builder import general_ode, construct_ode
 
 def main() -> None:
-    """ Run the application. """
-
+    """Run the application."""
     """ Read data from toml file """
 
     # Get the directory of the currently executing Python script
@@ -39,16 +34,16 @@ def main() -> None:
 
     """Generate start_conc, state_lists, reaction graph table, and rate constant matrix to set-up the ode calculation"""
 
-    num_states = len(toml_data.data['state']) # number of total states
-    start_conc = np.zeros(num_states) # list of starting concentration
+    num_states = len(toml_data.data["state"])  # number of total states
+    start_conc = np.zeros(num_states)  # list of starting concentration
 
-    state_list_name = ["name"] * num_states # name of the state list
-    state_list_num = np.zeros(num_states, dtype=int) # numbering of the state list
-    state_list_energy = np.zeros(num_states) # energy of the state list (J/mol)
-    state_list_oscil = np.zeros(num_states) # oscillation strength of the state list
+    state_list_name = ["name"] * num_states  # name of the state list
+    state_list_num = np.zeros(num_states, dtype=int)  # numbering of the state list
+    state_list_energy = np.zeros(num_states)  # energy of the state list (J/mol)
+    state_list_oscil = np.zeros(num_states)  # oscillation strength of the state list
 
-    graph_table_name = [] # name of the reaction connection as a tuple in a list (Ex. ('TAB*', 'ci2'))
-    graph_table_num = [] # numbering of the reaction connection as a tuple in a list (Ex. (2, 4))
+    graph_table_name = []  # name of the reaction connection as a tuple in a list (Ex. ('TAB*', 'ci2'))
+    graph_table_num = []  # numbering of the reaction connection as a tuple in a list (Ex. (2, 4))
 
     dim = (num_states, num_states)
     rates = np.zeros(dim)
@@ -66,26 +61,26 @@ def main() -> None:
 
         # Assume that the file structure is /folder_name/tc.out from current directory
 
-        if init_name.endswith('*'): # Exception for the Franck-Condon point to use the ground state calculation
+        if init_name.endswith("*"):  # Exception for the Franck-Condon point to use the ground state calculation
             folder_name = init_name[:-1]
-            file_path = os.path.join(current_dir, folder_name, 'sp', 'tc.out')
+            file_path = os.path.join(current_dir, folder_name, "sp", "tc.out")
         else:
-            file_path = os.path.join(current_dir, init_name, 'sp', 'tc.out')
+            file_path = os.path.join(current_dir, init_name, "sp", "tc.out")
 
         if os.path.exists(file_path):
             terachem_file = TeraChemOutputReader(file_path)
-            result = terachem_file.ci_energy() # Assume that only singlet states
+            result = terachem_file.ci_energy()  # Assume that only singlet states
             target_spin_state = toml_data._target_spin_state(i)
             hartree_energy = result[0][target_spin_state]
-            energy = (2625.5 * (10 ** 3)) * hartree_energy # hartree to J/mol
+            energy = (2625.5 * (10**3)) * hartree_energy  # hartree to J/mol
             state_list_energy[i] = energy
             if target_spin_state != 0:
-                oscilstr = result[1][target_spin_state-1]
+                oscilstr = result[1][target_spin_state - 1]
                 state_list_oscil[i] = oscilstr
 
     """Extract the information of the reaction connection and calculate the rate constants"""
 
-    for i in range(num_states):            
+    for i in range(num_states):
         for j in range(num_states):
             init_name = toml_data._state_name(i)
             init_num = toml_data._state_num(i)
@@ -102,13 +97,13 @@ def main() -> None:
                 graph_table_num.append(toml_data._graph_edge(init_num, ts_num))
                 graph_table_name.append(toml_data._graph_edge(ts_name, ts_final_name))
                 graph_table_num.append(toml_data._graph_edge(ts_num, ts_final_num))
-                
+
                 rate_formula = RateCalculator()
-                if ts_num == 6: #temporary if loop for S1bar condition
-                    dE = 15.438 * (10 ** 3) #J/mol
+                if ts_num == 6:  # temporary if loop for S1bar condition
+                    dE = 15.438 * (10**3)  # J/mol
                     rate_constant = rate_formula.reaction_theory.compute_rate(dE)
                     rates[init_num][ts_final_num] = rate_constant
-                
+
                 else:
                     dE = state_list_energy[ts_num] - state_list_energy[init_num]
                     rate_constant = rate_formula.reaction_theory.compute_rate(dE)
@@ -121,7 +116,7 @@ def main() -> None:
                 graph_table_name.append(toml_data._graph_edge(init_name, final_name))
                 graph_table_num.append(toml_data._graph_edge(init_num, final_num))
 
-                if toml_data._reaction_type(init_num, final_num) == 'relaxation':
+                if toml_data._reaction_type(init_num, final_num) == "relaxation":
                     dE = state_list_energy[final_num] - state_list_energy[init_num]
                     rate_constant = rate_formula.relaxation_theory.compute_rate(dE, normal_modes, total_atoms)
                     rates[init_num][final_num] = rate_constant
@@ -143,15 +138,15 @@ def main() -> None:
     # Add edges
     name_graph.add_edges_from(graph_table_name)
     num_graph.add_edges_from(graph_table_num)
-    
+
     # Convert the graph to a dictionary of lists
     table = nx.to_dict_of_lists(num_graph)
 
     # Visualize the graph
-    nx.draw(name_graph, with_labels=True, font_weight='bold')
+    nx.draw(name_graph, with_labels=True, font_weight="bold")
     plt.show()
 
-    nx.draw(num_graph, with_labels=True, font_weight='bold')
+    nx.draw(num_graph, with_labels=True, font_weight="bold")
     plt.show()
 
     """Solving ode"""
@@ -161,6 +156,7 @@ def main() -> None:
 
     plt.plot(time, conc)
     plt.show()
+
 
 if __name__ == "__main__":
     main()

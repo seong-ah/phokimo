@@ -14,6 +14,9 @@ dependencies = [
     "scipy",
     "typing_extensions",
     "sphinx_rtd_theme",
+    "networkx",
+    "toml",
+    "pandas"
 ]
 
 requires-python = ">=3.8"

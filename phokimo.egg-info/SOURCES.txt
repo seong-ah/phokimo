@@ -12,3 +12,7 @@ phokimo.egg-info/requires.txt
 phokimo.egg-info/top_level.txt
 phokimo/src/__init__.py
 phokimo/src/ode_builder.py
+phokimo/src/rate_constants.py
+phokimo/src/toml_reader.py
+phokimo/src/io/__init__.py
+phokimo/src/io/terachem.py
