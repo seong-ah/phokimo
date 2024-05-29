@@ -4,6 +4,8 @@ scipy
 typing_extensions
 sphinx_rtd_theme
 networkx
+toml
+pandas
 
 [dev]
 mypy

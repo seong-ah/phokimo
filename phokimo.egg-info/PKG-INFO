@@ -703,6 +703,8 @@ Requires-Dist: scipy
 Requires-Dist: typing_extensions
 Requires-Dist: sphinx_rtd_theme
 Requires-Dist: networkx
+Requires-Dist: toml
+Requires-Dist: pandas
 Provides-Extra: dev
 Requires-Dist: mypy; extra == "dev"
 Requires-Dist: pre-commit; extra == "dev"
