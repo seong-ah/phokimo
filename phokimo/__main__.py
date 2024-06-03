@@ -46,9 +46,12 @@ def main() -> None:
 
     graph_table_name = reactions.graph_table_name()
     graph_table_num = reactions.graph_table_num()
+
+    dEs = reactions.dEs(state_list_energy)
+    dEs_ev = [x * 0.0000103643 for x in dEs]
     rates = reactions.rates(state_list_energy)
 
-    """ Print rates """
+    " Simple print setting for debugging "
     def custom_formatter(x):
         if x == 0:
             return '0'
@@ -56,13 +59,17 @@ def main() -> None:
             return f'{x:.4f}'
     
     np.set_printoptions(formatter={'float_kind': custom_formatter})
+    print(dEs)
     print(rates)
 
-    """ Plot Energies(Eh) """
+    """ Plot Energies(eV) """
 
-    plt.scatter(state_list_name, state_list_hartree, marker="o")
+    state_list_ev = [(x - state_list_hartree[1]) * 27.2114 for x in state_list_hartree] # Relative energy from TAB in eV
+    visualize_state_list_ev = [np.round(x, 3) for x in state_list_ev]
 
-    for i, y in enumerate(state_list_hartree):
+    plt.scatter(state_list_name, visualize_state_list_ev, marker="o")
+
+    for i, y in enumerate(visualize_state_list_ev):
         plt.text(state_list_name[i], y, str(y), ha="left", va="bottom", fontsize=10)
 
     plt.show()
@@ -93,12 +100,17 @@ def main() -> None:
 
     """ Solving ode """
 
-    time = np.linspace(0, 10, 1000)
+    time = np.linspace(0, 10**(-12), 1000)
 
     func = partial(construct_ode, table=table, rates=rates)
     conc = odeint(func, start_conc, time)
 
+    labels = []
+    for i in range(toml_data.num_states()):
+        labels.append(toml_data.state_name(i))
+
     plt.plot(time, conc)
+    plt.legend(labels)
     plt.show()
 
     """ Graphing fractions """
@@ -115,7 +127,6 @@ def main() -> None:
 
     plt.plot(time, fractions)
     plt.show()
-
 
 if __name__ == "__main__":
     main()

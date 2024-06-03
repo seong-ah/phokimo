@@ -129,6 +129,36 @@ class Reactions:
                     final_num = self.toml.final_num(i, j)
                     graph_table_num.append(self.toml.graph_edge(init_num, final_num))
         return graph_table_num
+    
+    def dEs(self, state_list_energy: list) -> np.ndarray:
+        """Calculate the energy differences of each reaction.
+
+        dEs[initial_state][final_state] = final energy - initial energy (for reactions with transition state, excitation energy)
+
+        Args:
+            state_list_energy (list): energy(J/mol) of each state
+
+        Returns:
+            np.ndarray: rate constants
+        """
+        dim = (self.toml.num_states(), self.toml.num_states())
+        dEs = np.zeros(dim)
+        
+        for i in range(self.toml.num_states()):
+            init_num = self.toml.state_num(i)
+            for j in range(self.toml.num_states()):
+                if self.toml.ts_existence(i, j):
+                    ts_num = self.toml.ts_num(i, j)
+                    ts_final_num = self.toml.ts_final_num(i, j)
+                    dE = state_list_energy[ts_num] - state_list_energy[init_num]
+                    dEs[init_num][ts_final_num] = dE
+
+                if self.toml.final_existence(i, j):
+                    final_num = self.toml.final_num(i, j)
+                    if self.toml.reaction_type(init_num, final_num) == "relaxation":
+                        dE = state_list_energy[final_num] - state_list_energy[init_num]
+                        dEs[init_num][final_num] = dE
+        return dEs
 
     def rates(self, state_list_energy: list) -> np.ndarray:
         """Calculate the rate constants of each reaction.
@@ -142,22 +172,18 @@ class Reactions:
         dim = (self.toml.num_states(), self.toml.num_states())
         rates = np.zeros(dim)
 
+        reaction_types = self.toml.reaction_types()
+        dEs = self.dEs(state_list_energy)
+
         total_atoms = float(self.toml.total_atoms())
         normal_modes = 1.0  # Should be extended later for each reaction
 
         for i in range(self.toml.num_states()):
-            init_num = self.toml.state_num(i)
             for j in range(self.toml.num_states()):
-                if self.toml.ts_existence(i, j):
-                    ts_num = self.toml.ts_num(i, j)
-                    ts_final_num = self.toml.ts_final_num(i, j)
-                    dE = state_list_energy[ts_num] - state_list_energy[init_num]
-                    rate_constant = self.rate_constant.reaction_theory.compute_rate(dE)
-                    rates[init_num][ts_final_num] = rate_constant
-                if self.toml.final_existence(i, j):
-                    final_num = self.toml.final_num(i, j)
-                    if self.toml.reaction_type(init_num, final_num) == "relaxation":
-                        dE = state_list_energy[final_num] - state_list_energy[init_num]
-                        rate_constant = self.rate_constant.relaxation_theory.compute_rate(dE, normal_modes, total_atoms)
-                        rates[init_num][final_num] = rate_constant
+                if reaction_types[i][j] == 1:
+                    rate_constant = self.rate_constant.reaction_theory.compute_rate(dEs[i][j])
+                    rates[i][j] = rate_constant
+                if reaction_types[i][j] == 2:
+                    rate_constant = self.rate_constant.relaxation_theory.compute_rate(dEs[i][j], normal_modes, total_atoms)
+                    rates[i][j] = rate_constant
         return rates

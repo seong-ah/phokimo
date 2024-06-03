@@ -352,3 +352,30 @@ class TomlReader:
             init_num = self.state_num(i)
             state_list_num[i] = init_num
         return state_list_num
+    
+    def reaction_types(self) -> list:
+        """Generate a list of reaction types.
+
+        Each number represents the reaction type of reaction_types[initial_state][final_state]:
+            1: reaction with transition state
+            2: non-radiative relaxation
+            3: radiative emission
+
+        Returns:
+            list: numbering of each state
+        """
+        dim = (self.num_states(), self.num_states())
+        reaction_types = np.zeros(dim)
+        for i in range(self.num_states()):
+            init_num = self.state_num(i)
+            for j in range(self.num_states()):
+                if self.ts_existence(i, j):
+                    ts_final_num = self.ts_final_num(i, j)
+                    reaction_types[init_num][ts_final_num] = 1
+                if self.final_existence(i, j):
+                    final_num = self.final_num(i, j)
+                    if self.reaction_type(init_num, final_num) == "relaxation":
+                        reaction_types[init_num][final_num] = 2
+                    if self.reaction_type(init_num, final_num) == "emission":
+                        reaction_types[init_num][final_num] = 3
+        return reaction_types
