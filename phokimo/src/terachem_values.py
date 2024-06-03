@@ -47,6 +47,7 @@ class State_Values:
         for i in range(self.toml.num_states()):
             hartree_energy = self.terachem_output(i, calculation_path)[0][self.toml.target_spin_state(i)]
             state_list_hartree[i] = hartree_energy
+
         return state_list_hartree
 
     def state_list_energy(self, calculation_path: str) -> list:

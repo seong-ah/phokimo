@@ -57,8 +57,10 @@ def main() -> None:
             return '0'
         else:
             return f'{x:.4f}'
-    
+        
     np.set_printoptions(formatter={'float_kind': custom_formatter})
+    np.set_printoptions(suppress=False, precision=2)
+
     print(dEs)
     print(rates)
 
