@@ -12,13 +12,13 @@ from scipy.integrate import odeint
 
 from phokimo.src.ode_builder import construct_ode
 from phokimo.src.rate_constants import RateCalculator
-from phokimo.src.terachem_values import Reactions, State_values
+from phokimo.src.terachem_values import Reactions, State_Values
 from phokimo.src.toml_reader import TomlReader
 
 
 def main() -> None:
-    """Run the application."""
-    """ Read data from toml file """
+    """ Run the application. """
+    """ Read data from toml file. """
 
     # Get the directory of the currently executing Python script
     current_dir = os.path.dirname(os.path.abspath(__file__))
@@ -40,15 +40,25 @@ def main() -> None:
     rate_formula = RateCalculator()
     reactions = Reactions(toml_data, rate_formula)
 
-    state_data = State_values(toml_data)
-    state_list_hartree = state_data.hartree_energy(calculation_path)
-    state_list_energy = state_data.state_list_energy()
+    state_data = State_Values(toml_data)
+    state_list_hartree = state_data.state_list_hartree(calculation_path)
+    state_list_energy = state_data.state_list_energy(calculation_path)
 
     graph_table_name = reactions.graph_table_name()
     graph_table_num = reactions.graph_table_num()
     rates = reactions.rates(state_list_energy)
 
-    """Plot Energies (Eh)"""
+    """ Print rates """
+    def custom_formatter(x):
+        if x == 0:
+            return '0'
+        else:
+            return f'{x:.4f}'
+    
+    np.set_printoptions(formatter={'float_kind': custom_formatter})
+    print(rates)
+
+    """ Plot Energies(Eh) """
 
     plt.scatter(state_list_name, state_list_hartree, marker="o")
 
@@ -57,7 +67,7 @@ def main() -> None:
 
     plt.show()
 
-    """Graph creation"""
+    """ Graph creation """
 
     # Create a graph
     name_graph = nx.Graph()
@@ -81,7 +91,7 @@ def main() -> None:
     nx.draw(num_graph, with_labels=True, font_weight="bold")
     plt.show()
 
-    """Solving ode"""
+    """ Solving ode """
 
     time = np.linspace(0, 10, 1000)
 
@@ -91,12 +101,12 @@ def main() -> None:
     plt.plot(time, conc)
     plt.show()
 
-    """Graphing fractions"""
+    """ Graphing fractions """
 
-    dim = (num_states, num_states)
+    dim = (1000, 2)
 
     fractions = np.zeros(dim)  # [TAB, CAB]
-    for i in range(1, 10000):
+    for i in range(1, 1000):
         denominator = conc[i][1] + conc[i][2]
         tab = conc[i][1]
         cab = conc[i][2]

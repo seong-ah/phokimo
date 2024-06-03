@@ -49,13 +49,13 @@ class State_Values:
             state_list_hartree[i] = hartree_energy
         return state_list_hartree
 
-    def state_list_energy(self) -> list:
+    def state_list_energy(self, calculation_path: str) -> list:
         """Generate a list with a energy(J/mol) of each state.
 
         Returns:
             list: energy(J/mol) of each state
         """
-        state_list_energy = [x * 2625.5 * (10**3) for x in self.state_list_hartree]
+        state_list_energy = [x * 2625.5 * (10**3) for x in self.state_list_hartree(calculation_path)]
         return state_list_energy
 
     def oscilstr(self, calculation_path: str) -> list:
@@ -154,7 +154,7 @@ class Reactions:
                     dE = state_list_energy[ts_num] - state_list_energy[init_num]
                     rate_constant = self.rate_constant.reaction_theory.compute_rate(dE)
                     rates[init_num][ts_final_num] = rate_constant
-                if self.toml._final_existence(i, j):
+                if self.toml.final_existence(i, j):
                     final_num = self.toml.final_num(i, j)
                     if self.toml.reaction_type(init_num, final_num) == "relaxation":
                         dE = state_list_energy[final_num] - state_list_energy[init_num]

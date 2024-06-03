@@ -189,7 +189,7 @@ class AdhocRelaxation(RelaxationTheory):
         Returns:
             float: Rate of relaxation.
         """
-        return K_BOLTZ * T / H_PLANCK * np.exp(-(n_modes * dE) / (3 * n_atoms - 6) * R_GAS * T)
+        return K_BOLTZ * T / H_PLANCK * np.exp(-(n_modes * dE) / ((3 * n_atoms - 6) * R_GAS * T))
 
 
 class RateCalculator:
