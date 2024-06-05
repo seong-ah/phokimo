@@ -59,7 +59,7 @@ class State_Values:
         state_list_energy = [x * 2625.5 * (10**3) for x in self.state_list_hartree(calculation_path)]
         return state_list_energy
 
-    def oscilstr(self, calculation_path: str) -> list:
+    def oscilstr(self, calculation_path: str) -> list[tuple]:
         """Generate a list with an oscillation strength of each state.
 
         Oscillation strength only appears for excited states, so would be zero for the ground state.

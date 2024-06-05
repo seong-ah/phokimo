@@ -14,6 +14,7 @@ phokimo.src.ode\_builder
    .. autosummary::
    
       construct_ode
+      general_ode
       hard_coded_ode
    
    

@@ -11,8 +11,10 @@ phokimo.egg-info/entry_points.txt
 phokimo.egg-info/requires.txt
 phokimo.egg-info/top_level.txt
 phokimo/src/__init__.py
+phokimo/src/additioanl_graphing.py
 phokimo/src/ode_builder.py
 phokimo/src/rate_constants.py
+phokimo/src/terachem_values.py
 phokimo/src/toml_reader.py
 phokimo/src/io/__init__.py
 phokimo/src/io/terachem.py

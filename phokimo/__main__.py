@@ -46,8 +46,6 @@ def main() -> None:
     graph_table_name = reactions.graph_table_name()
     graph_table_num = reactions.graph_table_num()
 
-    dEs = reactions.dEs(state_list_energy)
-    dEs_ev = [x * 0.0000103643 for x in dEs]
     rates = reactions.rates(state_list_energy)
 
     " Simple print setting for debugging "
@@ -61,7 +59,6 @@ def main() -> None:
     np.set_printoptions(formatter={"float_kind": custom_formatter})
     np.set_printoptions(suppress=False, precision=2)
 
-    print(dEs_ev)
     print(rates)
 
     """ Plot Energies(eV) """
@@ -78,11 +75,11 @@ def main() -> None:
 
     """ Solving ode """
 
-    table = graph_builder(state_list_name, state_list_num, graph_table_name, graph_table_num)
+    #table = graph_builder(state_list_name, state_list_num, graph_table_name, graph_table_num)
+    table = toml_data.reaction_list()
 
     spacing = 1000
     time = np.linspace(0, 10 ** (-12), spacing)
-
 
     func = partial(construct_ode, table=table, rates=rates)
     conc = odeint(func, start_conc, time)
@@ -95,10 +92,9 @@ def main() -> None:
     plt.legend(labels)
     plt.show()
 
-    """ Graphing fractions """
+    """ Plotting fractions """
     number_of_products = 2
     fraction(spacing, number_of_products, time, conc)
-
 
 if __name__ == "__main__":
     main()

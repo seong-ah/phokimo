@@ -64,5 +64,9 @@ def fraction(spacing: int, number_of_products: int, time: np.ndarray, conc: np.n
         fractions[i][0] = tab / denominator
         fractions[i][1] = cab / denominator
 
+    labels = ["TAB", "CAB"]
+
     plt.plot(time, fractions)
+    plt.legend(labels)
     plt.show()
+    print(fractions[spacing-1][0], fractions[spacing-1][1])

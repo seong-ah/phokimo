@@ -353,6 +353,26 @@ class TomlReader:
             state_list_num[i] = init_num
         return state_list_num
     
+    def reaction_list(self) -> list[tuple]:
+        """Generate a list of reaction linkage.
+
+        Returns:
+            list: list of tuples of initial state and final state(initial, final)
+        """
+        reaction_list = []
+        for i in range(self.num_states()):
+            init_num = self.state_num(i)
+            for j in range(self.num_states()):
+                if self.ts_existence(i, j):
+                    ts_final_num = self.ts_final_num(i, j)
+                    edge = (init_num, ts_final_num)
+                    reaction_list.append(edge)
+                if self.final_existence(i, j):
+                    final_num = self.final_num(i, j)
+                    edge = (init_num, final_num)
+                    reaction_list.append(edge)
+        return reaction_list
+    
     def reaction_types(self) -> list:
         """Generate a list of reaction types.
 
