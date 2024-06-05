@@ -84,7 +84,7 @@ class TomlReader:
         state = self.data["state"][str(num)]["target_spin_state"]
         if type(state) == int:
             return state
-        if type(state) == list:
+        else:
             return state[1]
 
     def state_name(self, num: int) -> str:
@@ -362,7 +362,7 @@ class TomlReader:
             3: radiative emission
 
         Returns:
-            list: numbering of each state
+            list: reaction type of corresponding reactions (reaction_types[initial state][final state])
         """
         dim = (self.num_states(), self.num_states())
         reaction_types = np.zeros(dim)

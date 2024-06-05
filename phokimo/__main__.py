@@ -9,15 +9,14 @@ import matplotlib.pyplot as plt
 import numpy as np
 from scipy.integrate import odeint
 
+from phokimo.src.additioanl_graphing import fraction, graph_builder
 from phokimo.src.ode_builder import construct_ode
 from phokimo.src.rate_constants import RateCalculator
 from phokimo.src.terachem_values import Reactions, State_Values
 from phokimo.src.toml_reader import TomlReader
-from phokimo.src.graph_builder import graph_builder
-
 
 def main() -> None:
-    """ Run the application. """
+    """Run the application."""
     """ Read data from toml file. """
 
     # Get the directory of the currently executing Python script
@@ -52,13 +51,14 @@ def main() -> None:
     rates = reactions.rates(state_list_energy)
 
     " Simple print setting for debugging "
+
     def custom_formatter(x):
         if x == 0:
-            return '0'
+            return "0"
         else:
-            return f'{x:.4f}'
-        
-    np.set_printoptions(formatter={'float_kind': custom_formatter})
+            return f"{x:.4f}"
+
+    np.set_printoptions(formatter={"float_kind": custom_formatter})
     np.set_printoptions(suppress=False, precision=2)
 
     print(dEs_ev)
@@ -66,7 +66,7 @@ def main() -> None:
 
     """ Plot Energies(eV) """
 
-    state_list_ev = [(x - state_list_hartree[1]) * 27.2114 for x in state_list_hartree] # Relative energy from TAB in eV
+    state_list_ev = [(x - state_list_hartree[1]) * 27.2114 for x in state_list_hartree]  # Relative energy from TAB in eV
     visualize_state_list_ev = [np.round(x, 3) for x in state_list_ev]
 
     plt.scatter(state_list_name, visualize_state_list_ev, marker="o")
@@ -75,13 +75,14 @@ def main() -> None:
         plt.text(state_list_name[i], y, str(y), ha="left", va="bottom", fontsize=10)
 
     plt.show()
-    
+
     """ Solving ode """
 
-    
     table = graph_builder(state_list_name, state_list_num, graph_table_name, graph_table_num)
 
-    time = np.linspace(0, 10**(-12), 1000)
+    spacing = 1000
+    time = np.linspace(0, 10 ** (-12), spacing)
+
 
     func = partial(construct_ode, table=table, rates=rates)
     conc = odeint(func, start_conc, time)
@@ -95,19 +96,9 @@ def main() -> None:
     plt.show()
 
     """ Graphing fractions """
+    number_of_products = 2
+    fraction(spacing, number_of_products, time, conc)
 
-    dim = (1000, 2)
-
-    fractions = np.zeros(dim)  # [TAB, CAB]
-    for i in range(1, 1000):
-        denominator = conc[i][1] + conc[i][2]
-        tab = conc[i][1]
-        cab = conc[i][2]
-        fractions[i][0] = tab / denominator
-        fractions[i][1] = cab / denominator
-
-    plt.plot(time, fractions)
-    plt.show()
 
 if __name__ == "__main__":
     main()
