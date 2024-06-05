@@ -6,7 +6,6 @@ import os
 from functools import partial
 
 import matplotlib.pyplot as plt
-import networkx as nx
 import numpy as np
 from scipy.integrate import odeint
 
@@ -14,6 +13,7 @@ from phokimo.src.ode_builder import construct_ode
 from phokimo.src.rate_constants import RateCalculator
 from phokimo.src.terachem_values import Reactions, State_Values
 from phokimo.src.toml_reader import TomlReader
+from phokimo.src.graph_builder import graph_builder
 
 
 def main() -> None:
@@ -61,7 +61,7 @@ def main() -> None:
     np.set_printoptions(formatter={'float_kind': custom_formatter})
     np.set_printoptions(suppress=False, precision=2)
 
-    print(dEs)
+    print(dEs_ev)
     print(rates)
 
     """ Plot Energies(eV) """
@@ -75,32 +75,11 @@ def main() -> None:
         plt.text(state_list_name[i], y, str(y), ha="left", va="bottom", fontsize=10)
 
     plt.show()
-
-    """ Graph creation """
-
-    # Create a graph
-    name_graph = nx.Graph()
-    num_graph = nx.Graph()
-
-    # Add nodes
-    name_graph.add_nodes_from(state_list_name)
-    num_graph.add_nodes_from(state_list_num)
-
-    # Add edges
-    name_graph.add_edges_from(graph_table_name)
-    num_graph.add_edges_from(graph_table_num)
-
-    # Convert the graph to a dictionary of lists
-    table = nx.to_dict_of_lists(num_graph)
-
-    # Visualize the graph
-    nx.draw(name_graph, with_labels=True, font_weight="bold")
-    plt.show()
-
-    nx.draw(num_graph, with_labels=True, font_weight="bold")
-    plt.show()
-
+    
     """ Solving ode """
+
+    
+    table = graph_builder(state_list_name, state_list_num, graph_table_name, graph_table_num)
 
     time = np.linspace(0, 10**(-12), 1000)
 
