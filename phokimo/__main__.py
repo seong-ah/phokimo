@@ -14,6 +14,8 @@ from phokimo.src.ode_builder import construct_ode
 from phokimo.src.rate_constants import RateCalculator
 from phokimo.src.terachem_values import Reactions, State_Values
 from phokimo.src.toml_reader import TomlReader
+from tcgm_lib.convert.converter import energy_unit
+
 
 def main() -> None:
     """Run the application."""
@@ -41,7 +43,9 @@ def main() -> None:
 
     state_data = State_Values(toml_data)
     state_list_hartree = state_data.state_list_hartree(calculation_path)
+    print(state_list_hartree)
     state_list_energy = state_data.state_list_energy(calculation_path)
+    print(state_list_energy)
 
     graph_table_name = reactions.graph_table_name()
     graph_table_num = reactions.graph_table_num()
@@ -63,8 +67,11 @@ def main() -> None:
 
     """ Plot Energies(eV) """
 
-    state_list_ev = [(x - state_list_hartree[1]) * 27.2114 for x in state_list_hartree]  # Relative energy from TAB in eV
-    visualize_state_list_ev = [np.round(x, 3) for x in state_list_ev]
+    relative_energy = [(x - state_list_hartree[1]) for x in state_list_hartree] # Eh
+    relative_energy_numpy = np.asarray(relative_energy)
+    relative_energy_ev = energy_unit(relative_energy_numpy, "eh", "ev") # Relative energy from TAB in eV
+    visualize_state_list_ev = [np.round(x, 3) for x in relative_energy_ev]
+    print(relative_energy_ev)
 
     plt.scatter(state_list_name, visualize_state_list_ev, marker="o")
 
@@ -77,6 +84,7 @@ def main() -> None:
 
     #table = graph_builder(state_list_name, state_list_num, graph_table_name, graph_table_num)
     table = toml_data.reaction_list()
+    print(table)
 
     spacing = 1000
     time = np.linspace(0, 10 ** (-12), spacing)

@@ -5,6 +5,7 @@ import os
 import numpy as np
 
 from phokimo.src.io.terachem import TeraChemOutputReader
+from tcgm_lib.convert.converter import energy_unit
 
 
 class State_Values:
@@ -34,7 +35,7 @@ class State_Values:
         terachem = TeraChemOutputReader(file_path)
         return terachem.ci_energy(max_roots)
 
-    def state_list_hartree(self, calculation_path: str) -> list:
+    def state_list_hartree(self, calculation_path: str) -> np.ndarray:
         """Generate a list with a hartree energy(Eh) of each state.
 
         Args:
@@ -50,13 +51,13 @@ class State_Values:
 
         return state_list_hartree
 
-    def state_list_energy(self, calculation_path: str) -> list:
+    def state_list_energy(self, calculation_path: str) -> np.ndarray:
         """Generate a list with a energy(J/mol) of each state.
 
         Returns:
             list: energy(J/mol) of each state
         """
-        state_list_energy = [x * 2625.5 * (10**3) for x in self.state_list_hartree(calculation_path)]
+        state_list_energy = energy_unit(self.state_list_hartree(calculation_path), "eh", "j/mol")
         return state_list_energy
 
     def oscilstr(self, calculation_path: str) -> list[tuple]:
