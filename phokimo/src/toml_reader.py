@@ -399,3 +399,57 @@ class TomlReader:
                     if self.reaction_type(init_num, final_num) == "emission":
                         reaction_types[init_num][final_num] = 3
         return reaction_types
+    
+    def _condition(self, num = int) -> str:
+        """Extract the condition of corresponding state.
+
+        Returns:
+            str: condition of each state (reactant, product, intermediate, etc)
+        """
+        return self.data["state"][str(num)]["condition"]
+    
+    def reactant_num(self) -> int: 
+        """Extract the numbering of the reactant.
+
+        Assume that only one type of reactant exists.
+
+        Returns:
+            int: numbering of the reactant
+        """
+        for i in range(self.num_states()):
+            if self._condition(i) == "reactant":
+                return i
+            
+    def reactant_name(self) -> str:
+        """Extract the name of the reactant.
+
+        Assume that only one type of reactant exists.
+
+        Returns:
+            str: numbering of the reactant
+        """
+        num = self.reactant_num()
+        return self.state_name(num)
+    
+    def product_list_num(self) -> list[int]:
+        """Generate a list of numbering of the products.
+
+        Returns:
+            list[int]: list of numbering of the products
+        """
+        list = []
+        states = self.num_states()
+        for i in range(states):
+            if self._condition(i) == "product":
+                list.append(i)
+        return list
+
+    def product_list_name(self) -> list[str]:
+        """Generate a list of name of the products.
+
+        Returns:
+            list[int]: list of name of the products
+        """
+        list = self.product_list_num()
+        name_list = [self.state_name(x) for x in list]
+        return name_list

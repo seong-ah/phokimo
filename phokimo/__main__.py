@@ -43,14 +43,17 @@ def main() -> None:
 
     state_data = State_Values(toml_data)
     state_list_hartree = state_data.state_list_hartree(calculation_path)
-    print(state_list_hartree)
     state_list_energy = state_data.state_list_energy(calculation_path)
-    print(state_list_energy)
 
-    graph_table_name = reactions.graph_table_name()
-    graph_table_num = reactions.graph_table_num()
+    # graph_table_name = reactions.graph_table_name()
+    # graph_table_num = reactions.graph_table_num()
 
     rates = reactions.rates(state_list_energy)
+
+    reactant_name = toml_data.reactant_name()
+    reactant_num = toml_data.reactant_num()
+    product_list_name = toml_data.product_list_name()
+    product_list_num = toml_data.product_list_num()
 
     " Simple print setting for debugging "
 
@@ -71,7 +74,6 @@ def main() -> None:
     relative_energy_numpy = np.asarray(relative_energy)
     relative_energy_ev = energy_unit(relative_energy_numpy, "eh", "ev") # Relative energy from TAB in eV
     visualize_state_list_ev = [np.round(x, 3) for x in relative_energy_ev]
-    print(relative_energy_ev)
 
     plt.scatter(state_list_name, visualize_state_list_ev, marker="o")
 
@@ -82,12 +84,11 @@ def main() -> None:
 
     """ Solving ode """
 
-    #table = graph_builder(state_list_name, state_list_num, graph_table_name, graph_table_num)
+    # graph_builder(state_list_name, state_list_num, graph_table_name, graph_table_num, reactant_name, reactant_num, product_list_name, product_list_num)
     table = toml_data.reaction_list()
-    print(table)
 
     spacing = 1000
-    time = np.linspace(0, 10 ** (-12), spacing)
+    time = np.linspace(0, 10 ** (-9), spacing)
 
     func = partial(construct_ode, table=table, rates=rates)
     conc = odeint(func, start_conc, time)
@@ -101,8 +102,7 @@ def main() -> None:
     plt.show()
 
     """ Plotting fractions """
-    number_of_products = 2
-    fraction(spacing, number_of_products, time, conc)
+    fraction(spacing, time, conc, product_list_name, product_list_num)
 
 if __name__ == "__main__":
     main()
