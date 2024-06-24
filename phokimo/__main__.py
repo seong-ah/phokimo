@@ -45,8 +45,8 @@ def main() -> None:
     state_list_hartree = state_data.state_list_hartree(calculation_path)
     state_list_energy = state_data.state_list_energy(calculation_path)
 
-    # graph_table_name = reactions.graph_table_name()
-    # graph_table_num = reactions.graph_table_num()
+    graph_table_name = reactions.graph_table_name()
+    graph_table_num = reactions.graph_table_num()
 
     rates = reactions.rates(state_list_energy)
 
@@ -73,7 +73,7 @@ def main() -> None:
     relative_energy = [(x - state_list_hartree[1]) for x in state_list_hartree] # Eh
     relative_energy_numpy = np.asarray(relative_energy)
     relative_energy_ev = energy_unit(relative_energy_numpy, "eh", "ev") # Relative energy from TAB in eV
-    visualize_state_list_ev = [np.round(x, 3) for x in relative_energy_ev]
+    visualize_state_list_ev = [np.round(x, 2) for x in relative_energy_ev]
 
     plt.scatter(state_list_name, visualize_state_list_ev, marker="o")
 
@@ -84,11 +84,11 @@ def main() -> None:
 
     """ Solving ode """
 
-    # graph_builder(state_list_name, state_list_num, graph_table_name, graph_table_num, reactant_name, reactant_num, product_list_name, product_list_num)
+    # graph_builder(state_list_name, state_list_num, graph_table_name, graph_table_num)
     table = toml_data.reaction_list()
 
-    spacing = 1000
-    time = np.linspace(0, 10 ** (-9), spacing)
+    spacing = 10000
+    time = np.linspace(0, 10 ** (-11), spacing)
 
     func = partial(construct_ode, table=table, rates=rates)
     conc = odeint(func, start_conc, time)

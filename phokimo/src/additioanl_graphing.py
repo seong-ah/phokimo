@@ -5,9 +5,12 @@ from __future__ import annotations
 import matplotlib.pyplot as plt
 import networkx as nx
 import numpy as np
+import graphviz as gp
+from graphviz import Source
+import pydot as pd
 
 
-def graph_builder(state_list_name: list, state_list_num: list, graph_table_name: list, graph_table_num: list, reactant_name: str, reactant_num: int, product_list_name: list[str], product_list_num: list[int]) -> list[tuple]:
+def graph_builder(state_list_name: list, state_list_num: list, graph_table_name: list, graph_table_num: list) -> list[tuple]:
     """A tool to build graph represents the reaction relations.
 
     Args:
@@ -20,45 +23,28 @@ def graph_builder(state_list_name: list, state_list_num: list, graph_table_name:
         list: list of tuples that represent graph edges (initial/transition state, transition/final state)
     """
     # Create a graph
-    name_graph = nx.DiGraph(directed=True)
-    num_graph = nx.DiGraph(directed=True)
+    name_tree = gp.Digraph()
+
 
     # Add nodes
-    name_graph.add_nodes_from(state_list_name)
-    num_graph.add_nodes_from(state_list_num)
+    gp_nodes = []
+    for i in range(len(state_list_name)):
+        list = [str(state_list_num[i]), state_list_name[i]]
+        gp_nodes.append(tuple(list))
+    for node, label in gp_nodes:
+        name_tree.node(node, label)
+    print(gp_nodes)
 
     # Add edges
-    name_graph.add_edges_from(graph_table_name)
-    num_graph.add_edges_from(graph_table_num)
+    gp_edges = []
+    for init, fin in graph_table_num:
+        list = [str(init), str(fin)]
+        gp_edges.append(tuple(list))
+    for edge in gp_edges:
+        name_tree.edge(*edge)
+    print(gp_edges)
 
-    pos_name = nx.kamada_kawai_layout(name_graph, scale = 2)
-    pos_num = nx.kamada_kawai_layout(num_graph, scale = 5)
-
-    # Define starting & ending nodes
-        
-    pos_name[reactant_name] = [0.0, 1.0]
-    pos_num[reactant_num] = [0.0, 1.0]
-    
-    for i in range(len(product_list_num)):
-        num_states = float(len(product_list_num))
-        product_name = product_list_name[i]
-        product_num = product_list_num[i]
-        spacing = 1.0 / (num_states - 1)
-        pos_name[product_name] = [0.0 + (spacing * i), 0.0]
-        pos_num[product_num] = [0.0 + (spacing * i), 0.0]
-    
-    longest_path = []
-    for i in range(len(product_list_num)):
-        path = nx.dag_longest_path(num_graph, reactant_num, product_list_name[i])
-        if len(path) > len(longest_path):
-            longest_path[:] = path
-
-    # Visualize the graph
-    nx.draw(name_graph, pos_name, with_labels=True)
-    plt.show()
-
-    nx.draw(num_graph, pos_num, with_labels=True)
-    plt.show()
+    name_tree.render('example_graph', format='svg', view=True)
 
 def fraction(spacing: int, time: np.ndarray, conc: np.ndarray, product_list_name: list[str], product_list_num: list[int]) -> None:
     """A tool to plot fraction of products.
@@ -87,4 +73,4 @@ def fraction(spacing: int, time: np.ndarray, conc: np.ndarray, product_list_name
     plt.plot(time, fractions)
     plt.legend(product_list_name)
     plt.show()
-    print("{:.1f}, {:.1f}".format(fractions[spacing-1][0] * 100, fractions[spacing-1][1] * 100))
+    print("{:.0f}, {:.0f}".format(fractions[spacing-1][0] * 100, fractions[spacing-1][1] * 100))
