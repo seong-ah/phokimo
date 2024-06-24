@@ -12,6 +12,9 @@ import os
 
 from scipy.integrate import odeint
 
+linux_path = os.path.abspath("/home/guests/schoi/kinetic/phokimo/src")
+
+terachem_path = os.path.join(linux_path, 'terachem')
 from phokimo.src.io.terachem import TeraChemOutputReader
 
 from phokimo.src.rate_constants import RateCalculator, ReactionTheory, EyringEquation, RelaxationTheory, AdhocRelaxation
@@ -35,7 +38,7 @@ def main() -> None:
 
     # General data of the molecule
     total_atoms = float(toml_data._total_atoms())
-    normal_modes = float(toml_data._normal_modes())
+    normal_modes = 1.0
 
     """Generate start_conc, state_lists, reaction graph table, and rate constant matrix to set-up the ode calculation"""
 
@@ -44,6 +47,7 @@ def main() -> None:
 
     state_list_name = ["name"] * num_states # name of the state list
     state_list_num = np.zeros(num_states, dtype=int) # numbering of the state list
+    state_list_hartree = np.zeros(num_states) #energy of the state list (Hartree)
     state_list_energy = np.zeros(num_states) # energy of the state list (J/mol)
     state_list_oscil = np.zeros(num_states) # oscillation strength of the state list
 
@@ -67,21 +71,37 @@ def main() -> None:
         # Assume that the file structure is /folder_name/tc.out from current directory
 
         if init_name.endswith('*'): # Exception for the Franck-Condon point to use the ground state calculation
-            folder_name = init_name[:-1]
-            file_path = os.path.join(current_dir, folder_name, 'sp', 'tc.out')
+            target_folder_name = init_name[:-1]
+            for folder_name in os.listdir(current_dir):
+                if folder_name.endswith(target_folder_name):
+                    relative_path = os.path.join('..', '..', 'azobenzene', folder_name, 'sp', 'tc.out')
+                    file_path = os.path.abspath(relative_path)     
         else:
-            file_path = os.path.join(current_dir, init_name, 'sp', 'tc.out')
+            target_folder_name = init_name
+            for folder_name in os.listdir(current_dir):
+                if folder_name.endswith(target_folder_name):      
+                    relative_path = os.path.join('..', '..', 'azobenzene', folder_name, 'sp', 'tc.out')
+                    file_path = os.path.abspath(relative_path)
 
         if os.path.exists(file_path):
             terachem_file = TeraChemOutputReader(file_path)
             result = terachem_file.ci_energy() # Assume that only singlet states
             target_spin_state = toml_data._target_spin_state(i)
             hartree_energy = result[0][target_spin_state]
+            state_list_hartree[i] = hartree_energy
+            print(init_name, hartree_energy)
             energy = (2625.5 * (10 ** 3)) * hartree_energy # hartree to J/mol
             state_list_energy[i] = energy
             if target_spin_state != 0:
                 oscilstr = result[1][target_spin_state-1]
                 state_list_oscil[i] = oscilstr
+
+    plt.scatter(state_list_name, state_list_hartree, marker = 'o')
+
+    for i, y in enumerate(state_list_hartree):
+        plt.text(state_list_name[i], y, str(y), ha='left', va='bottom', fontsize=10)
+
+    plt.show()
 
     """Extract the information of the reaction connection and calculate the rate constants"""
 
@@ -104,15 +124,11 @@ def main() -> None:
                 graph_table_num.append(toml_data._graph_edge(ts_num, ts_final_num))
                 
                 rate_formula = RateCalculator()
-                if ts_num == 6: #temporary if loop for S1bar condition
-                    dE = 15.438 * (10 ** 3) #J/mol
-                    rate_constant = rate_formula.reaction_theory.compute_rate(dE)
-                    rates[init_num][ts_final_num] = rate_constant
-                
-                else:
-                    dE = state_list_energy[ts_num] - state_list_energy[init_num]
-                    rate_constant = rate_formula.reaction_theory.compute_rate(dE)
-                    rates[init_num][ts_final_num] = rate_constant
+
+                dE = state_list_energy[ts_num] - state_list_energy[init_num]
+                rate_constant = rate_formula.reaction_theory.compute_rate(dE)
+                rates[init_num][ts_final_num] = rate_constant
+                print(init_name, ts_name, ts_final_name, dE, rate_constant)
 
             if toml_data._final_existence(i, j) == True:
                 final_name = toml_data._final_name(i, j)
@@ -124,11 +140,12 @@ def main() -> None:
                 if toml_data._reaction_type(init_num, final_num) == 'relaxation':
                     dE = state_list_energy[final_num] - state_list_energy[init_num]
                     rate_constant = rate_formula.relaxation_theory.compute_rate(dE, normal_modes, total_atoms)
+                    print(init_name, final_name, dE, rate_constant)
                     rates[init_num][final_num] = rate_constant
-
                 # emission would be added later
 
-    time = np.linspace(0, 10, 1000)
+    end_time = 10 ** (-12)
+    time = np.linspace(0, end_time, 10000)
 
     """Graph creation"""
 
@@ -146,13 +163,14 @@ def main() -> None:
     
     # Convert the graph to a dictionary of lists
     table = nx.to_dict_of_lists(num_graph)
-
+    """
     # Visualize the graph
     nx.draw(name_graph, with_labels=True, font_weight='bold')
     plt.show()
 
     nx.draw(num_graph, with_labels=True, font_weight='bold')
     plt.show()
+    """
 
     """Solving ode"""
 
@@ -160,6 +178,27 @@ def main() -> None:
     conc = odeint(func, start_conc, time)
 
     plt.plot(time, conc)
+    
+    for i in range(num_states):
+        tag = toml_data._state_name(i)
+        plt.plot(conc[:, i], label = tag)
+
+    plt.legend()
+    plt.show()
+
+    dim = (10000, 2)
+
+    """Graphing fractions"""
+
+    fractions = np.zeros(dim) # [TAB, CAB]
+    for i in range(1, 10000):
+        denominator = conc[i][1] + conc[i][2]
+        TAB = conc[i][1]
+        CAB = conc[i][2]
+        fractions[i][0] = TAB / denominator
+        fractions[i][1] = CAB / denominator
+    
+    plt.plot(time, fractions)
     plt.show()
 
 if __name__ == "__main__":
