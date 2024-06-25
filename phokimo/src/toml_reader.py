@@ -97,6 +97,17 @@ class TomlReader:
             str: state name
         """
         return self.data["state"][str(num)]["name"]
+    
+    def visualize_state_name(self, num: int) -> str:
+        """Extract the state name for visualization.
+
+        Args:
+            num (int): numbering of the searching state
+
+        Returns:
+            str: state name for visualization
+        """
+        return self.data["state"][str(num)]["visualize_name"]
 
     def state_num(self, num: int) -> int:
         """Extract the numbering of the state.
@@ -340,6 +351,18 @@ class TomlReader:
             init_name = self.state_name(i)
             state_list_name[i] = init_name
         return state_list_name
+    
+    def visualize_state_list_name(self) -> list:
+        """Generate a list with a name of each state for visualization.
+
+        Returns:
+            list: name of each state for visualization
+        """
+        visualize_state_list_name = ["name"] * self.num_states()
+        for i in range(self.num_states()):
+            init_name = self.visualize_state_name(i)
+            visualize_state_list_name[i] = init_name
+        return visualize_state_list_name
 
     def state_list_num(self) -> list:
         """Generate a list with name of each state.
