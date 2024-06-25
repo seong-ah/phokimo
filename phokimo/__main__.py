@@ -35,7 +35,7 @@ def main() -> None:
     num_states = toml_data.num_states()
 
     state_list_name = toml_data.state_list_name()
-    state_list_num = toml_data.state_list_num()
+    visualize_state_list_name = toml_data.visualize_state_list_name()
     start_conc = toml_data.start_conc()
 
     rate_formula = RateCalculator()
@@ -44,9 +44,6 @@ def main() -> None:
     state_data = State_Values(toml_data)
     state_list_hartree = state_data.state_list_hartree(calculation_path)
     state_list_energy = state_data.state_list_energy(calculation_path)
-
-    graph_table_name = reactions.graph_table_name()
-    graph_table_num = reactions.graph_table_num()
 
     rates = reactions.rates(state_list_energy)
 
@@ -74,17 +71,15 @@ def main() -> None:
     relative_energy_numpy = np.asarray(relative_energy)
     relative_energy_ev = energy_unit(relative_energy_numpy, "eh", "ev") # Relative energy from TAB in eV
     visualize_state_list_ev = [np.round(x, 2) for x in relative_energy_ev]
+    print(visualize_state_list_name)
+    print(visualize_state_list_ev)
 
-    plt.scatter(state_list_name, visualize_state_list_ev, marker="o")
-
-    for i, y in enumerate(visualize_state_list_ev):
-        plt.text(state_list_name[i], y, str(y), ha="left", va="bottom", fontsize=10)
+    plt.scatter(visualize_state_list_name, visualize_state_list_ev, s=900, marker="_", linewidth=2, zorder=3)
+    [plt.text(x, y, str(y), ha="left", va="bottom", fontsize=10) for x, y in zip(range(len(visualize_state_list_name)), visualize_state_list_ev)]
 
     plt.show()
 
     """ Solving ode """
-
-    # graph_builder(state_list_name, state_list_num, graph_table_name, graph_table_num)
     table = toml_data.reaction_list()
 
     spacing = 10000
@@ -93,12 +88,8 @@ def main() -> None:
     func = partial(construct_ode, table=table, rates=rates)
     conc = odeint(func, start_conc, time)
 
-    labels = []
-    for i in range(toml_data.num_states()):
-        labels.append(toml_data.state_name(i))
-
     plt.plot(time, conc)
-    plt.legend(labels)
+    plt.legend(visualize_state_list_name)
     plt.show()
 
     """ Plotting fractions """
