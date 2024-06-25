@@ -2,204 +2,107 @@
 
 from __future__ import annotations
 
+import os
 from functools import partial
 
 import matplotlib.pyplot as plt
 import numpy as np
-import networkx as nx
-import toml
-import os
-
 from scipy.integrate import odeint
 
-linux_path = os.path.abspath("/home/guests/schoi/kinetic/phokimo/src")
-
-terachem_path = os.path.join(linux_path, 'terachem')
-from phokimo.src.io.terachem import TeraChemOutputReader
-
-from phokimo.src.rate_constants import RateCalculator, ReactionTheory, EyringEquation, RelaxationTheory, AdhocRelaxation
-
+from phokimo.src.additioanl_graphing import fraction, graph_builder
+from phokimo.src.ode_builder import construct_ode
+from phokimo.src.rate_constants import RateCalculator
+from phokimo.src.terachem_values import Reactions, State_Values
 from phokimo.src.toml_reader import TomlReader
+from tcgm_lib.convert.converter import energy_unit
 
-from phokimo.src.ode_builder import general_ode, construct_ode
 
 def main() -> None:
-    """ Run the application. """
-
-    """ Read data from toml file """
+    """Run the application."""
+    """ Read data from toml file. """
 
     # Get the directory of the currently executing Python script
     current_dir = os.path.dirname(os.path.abspath(__file__))
 
     # Assume the TOML file is in the same directory as the Python script
-    toml_file_path = os.path.join(current_dir, "sample.toml")
+    # Modify "s1_dynamics.toml" for suitable set-up toml file
+    toml_file_path = os.path.join(current_dir, "s1_dynamics.toml")
+
+    # Absolute path of calculation folders: assume that all folders have same structure in parallel (calculation_path/sp/tc.out)
+    calculation_path = "/home/guests/schoi/kinetic/azobenzene/"
 
     toml_data = TomlReader(toml_file_path)
+    num_states = toml_data.num_states()
 
-    # General data of the molecule
-    total_atoms = float(toml_data._total_atoms())
-    normal_modes = 1.0
+    state_list_name = toml_data.state_list_name()
+    state_list_num = toml_data.state_list_num()
+    start_conc = toml_data.start_conc()
 
-    """Generate start_conc, state_lists, reaction graph table, and rate constant matrix to set-up the ode calculation"""
+    rate_formula = RateCalculator()
+    reactions = Reactions(toml_data, rate_formula)
 
-    num_states = len(toml_data.data['state']) # number of total states
-    start_conc = np.zeros(num_states) # list of starting concentration
+    state_data = State_Values(toml_data)
+    state_list_hartree = state_data.state_list_hartree(calculation_path)
+    state_list_energy = state_data.state_list_energy(calculation_path)
 
-    state_list_name = ["name"] * num_states # name of the state list
-    state_list_num = np.zeros(num_states, dtype=int) # numbering of the state list
-    state_list_hartree = np.zeros(num_states) #energy of the state list (Hartree)
-    state_list_energy = np.zeros(num_states) # energy of the state list (J/mol)
-    state_list_oscil = np.zeros(num_states) # oscillation strength of the state list
+    graph_table_name = reactions.graph_table_name()
+    graph_table_num = reactions.graph_table_num()
 
-    graph_table_name = [] # name of the reaction connection as a tuple in a list (Ex. ('TAB*', 'ci2'))
-    graph_table_num = [] # numbering of the reaction connection as a tuple in a list (Ex. (2, 4))
+    rates = reactions.rates(state_list_energy)
 
-    dim = (num_states, num_states)
-    rates = np.zeros(dim)
+    reactant_name = toml_data.reactant_name()
+    reactant_num = toml_data.reactant_num()
+    product_list_name = toml_data.product_list_name()
+    product_list_num = toml_data.product_list_num()
 
-    """Extract the values of each states from toml file"""
+    " Simple print setting for debugging "
 
-    for i in range(num_states):
-        state = str(i)
-        start_conc[i] = toml_data._conc(i)
-
-        init_name = toml_data._state_name(i)
-        state_list_name[i] = init_name
-        init_num = toml_data._state_num(i)
-        state_list_num[i] = init_num
-
-        # Assume that the file structure is /folder_name/tc.out from current directory
-
-        if init_name.endswith('*'): # Exception for the Franck-Condon point to use the ground state calculation
-            target_folder_name = init_name[:-1]
-            for folder_name in os.listdir(current_dir):
-                if folder_name.endswith(target_folder_name):
-                    relative_path = os.path.join('..', '..', 'azobenzene', folder_name, 'sp', 'tc.out')
-                    file_path = os.path.abspath(relative_path)     
+    def custom_formatter(x):
+        if x == 0:
+            return "0"
         else:
-            target_folder_name = init_name
-            for folder_name in os.listdir(current_dir):
-                if folder_name.endswith(target_folder_name):      
-                    relative_path = os.path.join('..', '..', 'azobenzene', folder_name, 'sp', 'tc.out')
-                    file_path = os.path.abspath(relative_path)
+            return f"{x:.4f}"
 
-        if os.path.exists(file_path):
-            terachem_file = TeraChemOutputReader(file_path)
-            result = terachem_file.ci_energy() # Assume that only singlet states
-            target_spin_state = toml_data._target_spin_state(i)
-            hartree_energy = result[0][target_spin_state]
-            state_list_hartree[i] = hartree_energy
-            print(init_name, hartree_energy)
-            energy = (2625.5 * (10 ** 3)) * hartree_energy # hartree to J/mol
-            state_list_energy[i] = energy
-            if target_spin_state != 0:
-                oscilstr = result[1][target_spin_state-1]
-                state_list_oscil[i] = oscilstr
+    np.set_printoptions(formatter={"float_kind": custom_formatter})
+    np.set_printoptions(suppress=False, precision=2)
 
-    plt.scatter(state_list_name, state_list_hartree, marker = 'o')
+    print(rates)
 
-    for i, y in enumerate(state_list_hartree):
-        plt.text(state_list_name[i], y, str(y), ha='left', va='bottom', fontsize=10)
+    """ Plot Energies(eV) """
+
+    relative_energy = [(x - state_list_hartree[1]) for x in state_list_hartree] # Eh
+    relative_energy_numpy = np.asarray(relative_energy)
+    relative_energy_ev = energy_unit(relative_energy_numpy, "eh", "ev") # Relative energy from TAB in eV
+    visualize_state_list_ev = [np.round(x, 2) for x in relative_energy_ev]
+
+    plt.scatter(state_list_name, visualize_state_list_ev, marker="o")
+
+    for i, y in enumerate(visualize_state_list_ev):
+        plt.text(state_list_name[i], y, str(y), ha="left", va="bottom", fontsize=10)
 
     plt.show()
 
-    """Extract the information of the reaction connection and calculate the rate constants"""
+    """ Solving ode """
 
-    for i in range(num_states):            
-        for j in range(num_states):
-            init_name = toml_data._state_name(i)
-            init_num = toml_data._state_num(i)
+    # graph_builder(state_list_name, state_list_num, graph_table_name, graph_table_num)
+    table = toml_data.reaction_list()
 
-            rate_formula = RateCalculator()
-
-            if toml_data._ts_existence(i, j) == True:
-                ts_name = toml_data._ts_name(i, j)
-                ts_num = toml_data._ts_num(i, j)
-                ts_final_name = toml_data._ts_final_name(i, j)
-                ts_final_num = toml_data._ts_final_num(i, j)
-
-                graph_table_name.append(toml_data._graph_edge(init_name, ts_name))
-                graph_table_num.append(toml_data._graph_edge(init_num, ts_num))
-                graph_table_name.append(toml_data._graph_edge(ts_name, ts_final_name))
-                graph_table_num.append(toml_data._graph_edge(ts_num, ts_final_num))
-                
-                rate_formula = RateCalculator()
-
-                dE = state_list_energy[ts_num] - state_list_energy[init_num]
-                rate_constant = rate_formula.reaction_theory.compute_rate(dE)
-                rates[init_num][ts_final_num] = rate_constant
-                print(init_name, ts_name, ts_final_name, dE, rate_constant)
-
-            if toml_data._final_existence(i, j) == True:
-                final_name = toml_data._final_name(i, j)
-                final_num = toml_data._final_num(i, j)
-
-                graph_table_name.append(toml_data._graph_edge(init_name, final_name))
-                graph_table_num.append(toml_data._graph_edge(init_num, final_num))
-
-                if toml_data._reaction_type(init_num, final_num) == 'relaxation':
-                    dE = state_list_energy[final_num] - state_list_energy[init_num]
-                    rate_constant = rate_formula.relaxation_theory.compute_rate(dE, normal_modes, total_atoms)
-                    print(init_name, final_name, dE, rate_constant)
-                    rates[init_num][final_num] = rate_constant
-                # emission would be added later
-
-    end_time = 10 ** (-12)
-    time = np.linspace(0, end_time, 10000)
-
-    """Graph creation"""
-
-    # Create a graph
-    name_graph = nx.Graph()
-    num_graph = nx.Graph()
-
-    # Add nodes
-    name_graph.add_nodes_from(state_list_name)
-    num_graph.add_nodes_from(state_list_num)
-
-    # Add edges
-    name_graph.add_edges_from(graph_table_name)
-    num_graph.add_edges_from(graph_table_num)
-    
-    # Convert the graph to a dictionary of lists
-    table = nx.to_dict_of_lists(num_graph)
-    """
-    # Visualize the graph
-    nx.draw(name_graph, with_labels=True, font_weight='bold')
-    plt.show()
-
-    nx.draw(num_graph, with_labels=True, font_weight='bold')
-    plt.show()
-    """
-
-    """Solving ode"""
+    spacing = 10000
+    time = np.linspace(0, 10 ** (-11), spacing)
 
     func = partial(construct_ode, table=table, rates=rates)
     conc = odeint(func, start_conc, time)
 
+    labels = []
+    for i in range(toml_data.num_states()):
+        labels.append(toml_data.state_name(i))
+
     plt.plot(time, conc)
-    
-    for i in range(num_states):
-        tag = toml_data._state_name(i)
-        plt.plot(conc[:, i], label = tag)
-
-    plt.legend()
+    plt.legend(labels)
     plt.show()
 
-    dim = (10000, 2)
-
-    """Graphing fractions"""
-
-    fractions = np.zeros(dim) # [TAB, CAB]
-    for i in range(1, 10000):
-        denominator = conc[i][1] + conc[i][2]
-        TAB = conc[i][1]
-        CAB = conc[i][2]
-        fractions[i][0] = TAB / denominator
-        fractions[i][1] = CAB / denominator
-    
-    plt.plot(time, fractions)
-    plt.show()
+    """ Plotting fractions """
+    fraction(spacing, time, conc, product_list_name, product_list_num)
 
 if __name__ == "__main__":
     main()

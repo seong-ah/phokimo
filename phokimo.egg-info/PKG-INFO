@@ -701,10 +701,10 @@ Requires-Dist: matplotlib
 Requires-Dist: numpy
 Requires-Dist: scipy
 Requires-Dist: typing_extensions
-Provides-Extra: doc
-Requires-Dist: sphinx; extra == "doc"
-Requires-Dist: sphinx_rtd_theme; extra == "doc"
-Requires-Dist: myst-parser; extra == "doc"
+Requires-Dist: sphinx_rtd_theme
+Requires-Dist: networkx
+Requires-Dist: toml
+Requires-Dist: pandas
 Provides-Extra: dev
 Requires-Dist: mypy; extra == "dev"
 Requires-Dist: pre-commit; extra == "dev"

@@ -191,7 +191,6 @@ class AdhocRelaxation(RelaxationTheory):
         """
         return K_BOLTZ * T / H_PLANCK * np.exp(-(n_modes * dE) / ((3 * n_atoms - 6) * R_GAS * T))
 
-
 class RateCalculator:
     """Interface to define the varying theories that should be used for the computation of the rates."""
 

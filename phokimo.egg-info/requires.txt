@@ -2,6 +2,10 @@ matplotlib
 numpy
 scipy
 typing_extensions
+sphinx_rtd_theme
+networkx
+toml
+pandas
 
 [dev]
 mypy
@@ -14,8 +18,3 @@ pytest-cov
 pytest-split
 ruff
 phokimo[doc]
-
-[doc]
-sphinx
-sphinx_rtd_theme
-myst-parser

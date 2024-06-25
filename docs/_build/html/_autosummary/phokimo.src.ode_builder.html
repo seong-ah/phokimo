@@ -22,7 +22,7 @@
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
     <link rel="next" title="phokimo.src.rate_constants" href="phokimo.src.rate_constants.html" />
-    <link rel="prev" title="phokimo.src" href="phokimo.src.html" /> 
+    <link rel="prev" title="phokimo.src.io.terachem" href="phokimo.src.io.terachem.html" /> 
 </head>
 
 <body class="wy-body-for-nav"> 
@@ -47,12 +47,17 @@
               <ul class="current">
 <li class="toctree-l1 current"><a class="reference internal" href="phokimo.html">phokimo</a><ul class="current">
 <li class="toctree-l2 current"><a class="reference internal" href="phokimo.src.html">phokimo.src</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="phokimo.src.additioanl_graphing.html">phokimo.src.additioanl_graphing</a></li>
+<li class="toctree-l3"><a class="reference internal" href="phokimo.src.io.html">phokimo.src.io</a></li>
 <li class="toctree-l3 current"><a class="current reference internal" href="#">phokimo.src.ode_builder</a><ul>
 <li class="toctree-l4"><a class="reference internal" href="#phokimo.src.ode_builder.hard_coded_ode"><code class="docutils literal notranslate"><span class="pre">hard_coded_ode()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#phokimo.src.ode_builder.construct_ode"><code class="docutils literal notranslate"><span class="pre">construct_ode()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#phokimo.src.ode_builder.general_ode"><code class="docutils literal notranslate"><span class="pre">general_ode()</span></code></a></li>
 </ul>
 </li>
 <li class="toctree-l3"><a class="reference internal" href="phokimo.src.rate_constants.html">phokimo.src.rate_constants</a></li>
+<li class="toctree-l3"><a class="reference internal" href="phokimo.src.terachem_values.html">phokimo.src.terachem_values</a></li>
+<li class="toctree-l3"><a class="reference internal" href="phokimo.src.toml_reader.html">phokimo.src.toml_reader</a></li>
 </ul>
 </li>
 </ul>
@@ -94,7 +99,10 @@
 <tr class="row-odd"><td><p><a class="reference internal" href="#phokimo.src.ode_builder.construct_ode" title="phokimo.src.ode_builder.construct_ode"><code class="xref py py-obj docutils literal notranslate"><span class="pre">construct_ode</span></code></a>(concentration, t, table, rates)</p></td>
 <td><p>A tool to automatically construct ODEs.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#phokimo.src.ode_builder.hard_coded_ode" title="phokimo.src.ode_builder.hard_coded_ode"><code class="xref py py-obj docutils literal notranslate"><span class="pre">hard_coded_ode</span></code></a>(c, t, k)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#phokimo.src.ode_builder.general_ode" title="phokimo.src.ode_builder.general_ode"><code class="xref py py-obj docutils literal notranslate"><span class="pre">general_ode</span></code></a>(concentration, t, table, rates)</p></td>
+<td><p>A tool to automatically construct ODEs with considering reverse reactions.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#phokimo.src.ode_builder.hard_coded_ode" title="phokimo.src.ode_builder.hard_coded_ode"><code class="xref py py-obj docutils literal notranslate"><span class="pre">hard_coded_ode</span></code></a>(c, t, k)</p></td>
 <td><p>An example for an ordinary differential equation.</p></td>
 </tr>
 </tbody>
@@ -145,13 +153,35 @@ This functions needs to be given to the odeint solver.</p>
 </dl>
 </dd></dl>
 
+<dl class="py function">
+<dt class="sig sig-object py" id="phokimo.src.ode_builder.general_ode">
+<span class="sig-prename descclassname"><span class="pre">phokimo.src.ode_builder.</span></span><span class="sig-name descname"><span class="pre">general_ode</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">concentration</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">np.ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">t</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">np.ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">table</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rates</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">np.ndarray</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">float</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="p"><span class="pre">...</span></span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#phokimo.src.ode_builder.general_ode" title="Link to this definition"></a></dt>
+<dd><p>A tool to automatically construct ODEs with considering reverse reactions.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>concentration</strong> (<em>np.ndarray</em>) – starting concentration</p></li>
+<li><p><strong>t</strong> (<em>np.ndarray</em>) – time</p></li>
+<li><p><strong>table</strong> (<em>dict</em>) – table with information of possible reaction</p></li>
+<li><p><strong>rates</strong> (<em>np.ndarray</em>) – reaction rates as N x N adjacency matrix. N: number of structures.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>concentration profile for ODEs.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>tuple</p>
+</dd>
+</dl>
+</dd></dl>
+
 </section>
 
 
            </div>
           </div>
           <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
-        <a href="phokimo.src.html" class="btn btn-neutral float-left" title="phokimo.src" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="phokimo.src.io.terachem.html" class="btn btn-neutral float-left" title="phokimo.src.io.terachem" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
         <a href="phokimo.src.rate_constants.html" class="btn btn-neutral float-right" title="phokimo.src.rate_constants" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
     </div>
 
