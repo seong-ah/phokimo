@@ -83,9 +83,9 @@ class TomlReader:
         """
         state = self.data["state"][str(num)]["target_spin_state"]
         if type(state) == int:
-            return state
+            return [state, state]
         else:
-            return state[1]
+            return state
 
     def state_name(self, num: int) -> str:
         """Extract the state name.
@@ -422,6 +422,45 @@ class TomlReader:
                     if self.reaction_type(init_num, final_num) == "emission":
                         reaction_types[init_num][final_num] = 3
         return reaction_types
+    def graph_table_name(self) -> list:
+        """Generate a list with reaction connection with state names.
+
+        Returns:
+            list: graph edge tuples that represent the reaction with state names
+        """
+        graph_table_name = []
+        for i in range(self.num_states()):
+            init_name = self.state_name(i)
+            for j in range(self.num_states()):
+                if self.ts_existence(i, j):
+                    ts_name = self.ts_name(i, j)
+                    ts_final_name = self.ts_final_name(i, j)
+                    graph_table_name.append(self.graph_edge(init_name, ts_name))
+                    graph_table_name.append(self.graph_edge(ts_name, ts_final_name))
+                if self.final_existence(i, j):
+                    final_name = self.final_name(i, j)
+                    graph_table_name.append(self.graph_edge(init_name, final_name))
+        return graph_table_name
+
+    def graph_table_num(self) -> list:
+        """Generate a list with reaction connection with state numberings.
+
+        Returns:
+            list: graph edge tuples that represent the reaction with state numberings
+        """
+        graph_table_num = []
+        for i in range(self.num_states()):
+            init_num = self.state_num(i)
+            for j in range(self.num_states()):
+                if self.ts_existence(i, j):
+                    ts_num = self.ts_num(i, j)
+                    ts_final_num = self.ts_final_num(i, j)
+                    graph_table_num.append(self.graph_edge(init_num, ts_num))
+                    graph_table_num.append(self.graph_edge(ts_num, ts_final_num))
+                if self.final_existence(i, j):
+                    final_num = self.final_num(i, j)
+                    graph_table_num.append(self.graph_edge(init_num, final_num))
+        return graph_table_num
     
     def _condition(self, num = int) -> str:
         """Extract the condition of corresponding state.

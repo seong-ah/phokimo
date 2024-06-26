@@ -19,7 +19,7 @@ class State_Values:
         """
         self.toml = toml
 
-    def terachem_output(self, num: int, calculation_path: str, max_roots: int = 3) -> tuple:
+    def terachem_output(self, num: int, calculation_path: str, max_roots: int = 5) -> tuple:
         """Get the energy and oscillation strength from terachem output.
 
         Args:
@@ -46,7 +46,7 @@ class State_Values:
         """
         state_list_hartree = np.zeros(self.toml.num_states())
         for i in range(self.toml.num_states()):
-            hartree_energy = self.terachem_output(i, calculation_path)[0][self.toml.target_spin_state(i)]
+            hartree_energy = (self.terachem_output(i, calculation_path)[0][self.toml.target_spin_state(i)[0]] + self.terachem_output(i, calculation_path)[0][self.toml.target_spin_state(i)[1]]) / 2
             state_list_hartree[i] = hartree_energy
 
         return state_list_hartree
@@ -73,8 +73,8 @@ class State_Values:
         """
         state_list_oscil = np.zeros(self.num_states)
         for i in range(self.num_states):
-            if self.toml.target_spin_state != 0:
-                oscilstr = self.terachem_output(i, calculation_path)[1][self.toml.target_spin_state - 1]
+            if self.toml.target_spin_state(i)[0] != 0:
+                oscilstr = self.terachem_output(i, calculation_path)[1][self.toml.target_spin_state(i)[0] - 1]
                 state_list_oscil[i] = oscilstr
         return state_list_oscil
 
@@ -92,45 +92,6 @@ class Reactions:
         self.toml = toml
         self.rate_constant = rate_constant
 
-    def graph_table_name(self) -> list:
-        """Generate a list with reaction connection with state names.
-
-        Returns:
-            list: graph edge tuples that represent the reaction with state names
-        """
-        graph_table_name = []
-        for i in range(self.toml.num_states()):
-            init_name = self.toml.state_name(i)
-            for j in range(self.toml.num_states()):
-                if self.toml.ts_existence(i, j):
-                    ts_name = self.toml.ts_name(i, j)
-                    ts_final_name = self.toml.ts_final_name(i, j)
-                    graph_table_name.append(self.toml.graph_edge(init_name, ts_name))
-                    graph_table_name.append(self.toml.graph_edge(ts_name, ts_final_name))
-                if self.toml.final_existence(i, j):
-                    final_name = self.toml.final_name(i, j)
-                    graph_table_name.append(self.toml.graph_edge(init_name, final_name))
-        return graph_table_name
-
-    def graph_table_num(self) -> list:
-        """Generate a list with reaction connection with state numberings.
-
-        Returns:
-            list: graph edge tuples that represent the reaction with state numberings
-        """
-        graph_table_num = []
-        for i in range(self.toml.num_states()):
-            init_num = self.toml.state_num(i)
-            for j in range(self.toml.num_states()):
-                if self.toml.ts_existence(i, j):
-                    ts_num = self.toml.ts_num(i, j)
-                    ts_final_num = self.toml.ts_final_num(i, j)
-                    graph_table_num.append(self.toml.graph_edge(init_num, ts_num))
-                    graph_table_num.append(self.toml.graph_edge(ts_num, ts_final_num))
-                if self.toml.final_existence(i, j):
-                    final_num = self.toml.final_num(i, j)
-                    graph_table_num.append(self.toml.graph_edge(init_num, final_num))
-        return graph_table_num
     
     def dEs(self, state_list_energy: list) -> np.ndarray:
         """Calculate the energy differences of each reaction.

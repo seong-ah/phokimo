@@ -26,7 +26,7 @@ def main() -> None:
 
     # Assume the TOML file is in the same directory as the Python script
     # Modify "s1_dynamics.toml" for suitable set-up toml file
-    toml_file_path = os.path.join(current_dir, "s1_dynamics.toml")
+    toml_file_path = os.path.join(current_dir, "azobenzene_s2_dynamics.toml")
 
     # Absolute path of calculation folders: assume that all folders have same structure in parallel (calculation_path/sp/tc.out)
     calculation_path = "/home/guests/schoi/kinetic/azobenzene/"
@@ -63,7 +63,10 @@ def main() -> None:
     np.set_printoptions(formatter={"float_kind": custom_formatter})
     np.set_printoptions(suppress=False, precision=2)
 
-    print(rates)
+    for i in range(num_states):
+        for j in range(num_states):
+            if rates[i][j] != 0:
+                print(state_list_name[i], state_list_name[j], rates[i][j])
 
     """ Plot Energies(eV) """
 
@@ -81,9 +84,10 @@ def main() -> None:
 
     """ Solving ode """
     table = toml_data.reaction_list()
+    print(table)
 
     spacing = 10000
-    time = np.linspace(0, 10 ** (-11), spacing)
+    time = np.linspace(0, 10 ** (-7), spacing)
 
     func = partial(construct_ode, table=table, rates=rates)
     conc = odeint(func, start_conc, time)
