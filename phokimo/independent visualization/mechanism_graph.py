@@ -6,6 +6,9 @@ import os
 import numpy as np
 import graphviz as gp
 from phokimo.src.toml_reader import TomlReader
+from phokimo.src.rate_constants import RateCalculator
+from phokimo.src.terachem_values import Reactions
+from tcgm_lib.convert.converter import energy_unit
 
 def graph_builder():
     """A tool to build graph represents the reaction relations.
@@ -24,9 +27,17 @@ def graph_builder():
 
     # Assume the TOML file is in the same directory as the Python script
     # Modify "s1_dynamics.toml" for suitable set-up toml file
-    toml_file_path = os.path.join(current_dir, "s1_dynamics.toml")
+    toml_relative_file_path = os.path.join(current_dir, "..", "azobenzene_s1_dynamics.toml")
+    toml_file_path = os.path.abspath
 
     toml_data = TomlReader(toml_file_path)
+
+    rate_formula = RateCalculator()
+    reactions = Reactions(toml_data, rate_formula)
+
+    state_list_name = toml_data.visualize_state_list_name()
+    state_list_num = toml_data.state_list_num()
+    graph_table_num = reactions.graph_table_num()
 
     # Create a graph
     name_tree = gp.Digraph()
@@ -53,9 +64,4 @@ def graph_builder():
 
     name_tree.render('example_graph', format='svg', view=True)
 
-state_list_name = toml_data.
-state_list_num = result_list = [i for i in range(len(state_list_name))]
-graph_table_name = [('TAB*', 's1min'), ('TAB*', 's1s0_unreactive'), ('s1min', 's1s0_unreactive'), ('s1s0_unreactive', 'TAB'), ('s1min', 's1bar'), ('s1bar', 's1s0_reactive'), ('s1s0_reactive', 'TAB'), ('s1s0_reactive', 'CAB'), ('s1s0_unreactive', 'TAB')]
-graph_table_num = [(0, 3), (0, 5), (3, 5), (5, 1), (3, 6), (6, 4), (4, 1), (4, 2)]
-
-graph_builder(state_list_name, state_list_num, graph_table_num)
+graph_builder()
