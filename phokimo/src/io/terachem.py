@@ -105,7 +105,7 @@ class TeraChemOutputReader:
 
         return float(self.lines[j].split()[2])
 
-    def ci_energy(self, max_roots: int = 3) -> tuple:
+    def ci_energy(self, max_roots: int = 5) -> tuple:
         """Reads configurational interaction energies and oscillator strength.
 
         !CAUTION! There is no distinguishment between singlet and triplet, or other, states.
