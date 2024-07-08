@@ -19,7 +19,7 @@ class State_Values:
         """
         self.toml = toml
 
-    def terachem_output(self, num: int, calculation_path: str, max_roots: int = 5) -> tuple:
+    def terachem_output(self, num: int, calculation_path: str, max_roots: int = 5, substate = False) -> tuple:
         """Get the energy and oscillation strength from terachem output.
 
         Args:
@@ -30,9 +30,10 @@ class State_Values:
         Returns:
             tuple: energies (Eh) and oscillator strengths (-)
         """
-        file_path = self.toml.file_path(num, calculation_path)
+        file_path = self.toml.file_path(num, calculation_path, substate)
         assert os.path.exists(file_path)
         terachem = TeraChemOutputReader(file_path)
+        
         return terachem.ci_energy(max_roots)
 
     def state_list_hartree(self, calculation_path: str) -> np.ndarray:
@@ -46,7 +47,12 @@ class State_Values:
         """
         state_list_hartree = np.zeros(self.toml.num_states())
         for i in range(self.toml.num_states()):
-            hartree_energy = (self.terachem_output(i, calculation_path)[0][self.toml.target_spin_state(i)[0]] + self.terachem_output(i, calculation_path)[0][self.toml.target_spin_state(i)[1]]) / 2
+            hartree_energy = 0.0
+            if self.toml.substate_existence(i):
+                for j in self.toml.substate_list(i):
+                    hartree_energy += self.terachem_output(j, calculation_path, substate = True)[0][self.toml.target_spin_state(j, substate = True)[0]]
+            else:
+                hartree_energy = (self.terachem_output(i, calculation_path)[0][self.toml.target_spin_state(i)[0]] + self.terachem_output(i, calculation_path)[0][self.toml.target_spin_state(i)[1]]) / 2
             state_list_hartree[i] = hartree_energy
 
         return state_list_hartree

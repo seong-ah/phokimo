@@ -72,7 +72,7 @@ class TomlReader:
         """
         return self.data["state"][str(num)]["spin_multiplicity"]
 
-    def target_spin_state(self, num: int) -> int:
+    def target_spin_state(self, num: int, substate = False) -> int:
         """Extract the target spin state.
 
         Args:
@@ -81,13 +81,17 @@ class TomlReader:
         Returns:
             int: target spin state
         """
-        state = self.data["state"][str(num)]["target_spin_state"]
+        if substate == False:
+            state = self.data["state"][str(num)]["target_spin_state"]
+        else:
+            state = self.data["substate"][str(num)]["target_spin_state"]
+            
         if type(state) == int:
             return [state, state]
         else:
             return state
 
-    def state_name(self, num: int) -> str:
+    def state_name(self, num: int, substate = False) -> str:
         """Extract the state name.
 
         Args:
@@ -96,7 +100,10 @@ class TomlReader:
         Returns:
             str: state name
         """
-        return self.data["state"][str(num)]["name"]
+        if substate == False:
+            return self.data["state"][str(num)]["name"]
+        else:
+            return self.data["substate"][str(num)]["name"]
     
     def visualize_state_name(self, num: int) -> str:
         """Extract the state name for visualization.
@@ -130,6 +137,35 @@ class TomlReader:
             float: starting concentration
         """
         return self.data["state"][str(num)]["conc"]
+    
+    def substate_existence(self, num: int) -> bool:
+        """Check substate exists or not.
+
+        Args:
+            num (int): numbering of the searching state
+
+        Returns:
+            bool: True if substate exists and False for else
+        """
+        if 'substate' in self.data["state"][str(num)]:
+            return True
+        else:
+            return False
+        
+    def substate_list(self, num: int) -> list:
+        """Return list of substates.
+
+        substate_existence should be True, otherwise AssertionError will be raised.
+        
+        Args:
+            num (int): numbering of the searching state
+
+        Returns:
+            list: list of substates
+        """
+        assert self.substate_existence(num) == True
+
+        return self.data["state"][str(num)]["substate"]
 
     def initial_name(self, num: int) -> str:
         """Extract the name of the initial state of the reaction.
@@ -305,7 +341,7 @@ class TomlReader:
         if self.final_existence(init, fin):
             return self.data["state"][str(init)]["final"][str(fin)]["reaction_type"]
 
-    def file_path(self, num: int, calculation_path: str):
+    def file_path(self, num: int, calculation_path: str, substate = False):
         """Get the file path of the given state.
 
         For the optimized(minimized) states, using the corresponding folder of the given state name.
@@ -319,7 +355,7 @@ class TomlReader:
             str: file path
         """
         for folder in os.listdir(calculation_path):
-            state_name = self.state_name(num)
+            state_name = self.state_name(num, substate)
             if state_name.endswith("*"):
                 target_folder_name = state_name[:-1]
             else:

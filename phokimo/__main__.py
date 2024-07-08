@@ -26,15 +26,14 @@ def main() -> None:
 
     # Assume the TOML file is in the same directory as the Python script
     # Modify "s1_dynamics.toml" for suitable set-up toml file
-    toml_file_path = os.path.join(current_dir, "azobenzene_s2_dynamics.toml")
+    toml_file_path = os.path.join(current_dir, "ethylene_s1_dynamics.toml")
 
     # Absolute path of calculation folders: assume that all folders have same structure in parallel (calculation_path/sp/tc.out)
-    calculation_path = "/home/guests/schoi/kinetic/azobenzene/"
+    calculation_path = "/home/guests/schoi/kinetic/ethylene/"
 
     toml_data = TomlReader(toml_file_path)
     num_states = toml_data.num_states()
 
-    state_list_name = toml_data.state_list_name()
     visualize_state_list_name = toml_data.visualize_state_list_name()
     start_conc = toml_data.start_conc()
 
@@ -66,11 +65,11 @@ def main() -> None:
     for i in range(num_states):
         for j in range(num_states):
             if rates[i][j] != 0:
-                print(state_list_name[i], state_list_name[j], rates[i][j])
+                print(visualize_state_list_name[i], visualize_state_list_name[j], rates[i][j])
 
     """ Plot Energies(eV) """
 
-    relative_energy = [(x - state_list_hartree[1]) for x in state_list_hartree] # Eh
+    relative_energy = [(x - state_list_hartree[7]) for x in state_list_hartree] # Eh
     relative_energy_numpy = np.asarray(relative_energy)
     relative_energy_ev = energy_unit(relative_energy_numpy, "eh", "ev") # Relative energy from TAB in eV
     visualize_state_list_ev = [np.round(x, 2) for x in relative_energy_ev]
@@ -91,10 +90,6 @@ def main() -> None:
 
     func = partial(construct_ode, table=table, rates=rates)
     conc = odeint(func, start_conc, time)
-
-    labels = []
-    for i in range(toml_data.num_states()):
-        labels.append(toml_data.state_name(i))
 
     plt.plot(time, conc)
     plt.legend(visualize_state_list_name)
