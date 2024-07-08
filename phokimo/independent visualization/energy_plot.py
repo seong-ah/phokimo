@@ -16,9 +16,6 @@ def energyplot():
     toml_relative_file_path = os.path.join(current_dir, "..", "s1_dynamics.toml")
     toml_absolute_file_path = os.path.abspath(toml_relative_file_path)
 
-    # Absolute path of calculation folders: assume that all folders have same structure in parallel (calculation_path/sp/tc.out)
-    calculation_path = "/home/guests/schoi/kinetic/azobenzene/"
-
     toml_data = TomlReader(toml_absolute_file_path)
     list = toml_data.visualize_state_list_name()
     name_list = ['TAB*', 'TAB', 'CAB', 'S1 min', 'S1/S0 reactive', 'S1/S0 unreactive', 'S1 bar']

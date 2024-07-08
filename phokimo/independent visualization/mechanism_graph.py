@@ -6,9 +6,16 @@ import os
 import numpy as np
 import graphviz as gp
 from phokimo.src.toml_reader import TomlReader
-from phokimo.src.rate_constants import RateCalculator
-from phokimo.src.terachem_values import Reactions
-from tcgm_lib.convert.converter import energy_unit
+from collections import Counter
+
+def remove_duplicates(lst):
+    seen = set()
+    new_list = []
+    for item in lst:
+        if item not in seen:
+            new_list.append(item)
+            seen.add(item)
+    return new_list
 
 def graph_builder():
     """A tool to build graph represents the reaction relations.
@@ -27,22 +34,19 @@ def graph_builder():
 
     # Assume the TOML file is in the same directory as the Python script
     # Modify "s1_dynamics.toml" for suitable set-up toml file
-    toml_relative_file_path = os.path.join(current_dir, "..", "azobenzene_s1_dynamics.toml")
-    toml_file_path = os.path.abspath
+    toml_relative_file_path = os.path.join(current_dir, "..", "azobenzene_s2_dynamics.toml")
+    toml_file_path = os.path.abspath(toml_relative_file_path)
 
     toml_data = TomlReader(toml_file_path)
 
-    rate_formula = RateCalculator()
-    reactions = Reactions(toml_data, rate_formula)
-
     state_list_name = toml_data.visualize_state_list_name()
     state_list_num = toml_data.state_list_num()
-    graph_table_num = reactions.graph_table_num()
+    graph_table_num = remove_duplicates(toml_data.graph_table_num())
 
     # Create a graph
     name_tree = gp.Digraph()
 
-    name_tree.attr(fontname = 'Arial')
+    name_tree.node_attr.update(fontname='Arial')
 
     # Add nodes
     gp_nodes = []
