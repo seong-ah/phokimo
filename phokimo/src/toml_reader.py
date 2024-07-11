@@ -77,6 +77,7 @@ class TomlReader:
 
         Args:
             num (int): numbering of the searching state
+            substate (bool): default setting is False, True when targeting substate
 
         Returns:
             int: target spin state
@@ -96,6 +97,7 @@ class TomlReader:
 
         Args:
             num (int): numbering of the searching state
+            substate (bool): default setting is False, True when targeting substate
 
         Returns:
             str: state name
@@ -340,8 +342,16 @@ class TomlReader:
         """
         if self.final_existence(init, fin):
             return self.data["state"][str(init)]["final"][str(fin)]["reaction_type"]
+        
+    def calculation_path(self) -> str:
+        """Get the basic calculation path.
 
-    def file_path(self, num: int, calculation_path: str, substate = False):
+        Returns:
+            str: file path
+        """
+        return self.data["molecule"]["calculation_path"]
+
+    def file_path(self, num: int, substate = False) -> str:
         """Get the file path of the given state.
 
         For the optimized(minimized) states, using the corresponding folder of the given state name.
@@ -349,11 +359,12 @@ class TomlReader:
 
         Args:
             num (int): numbering of the searching state
-            calculation_path (str): absolute path of calculation directory (calculation folders should have same parallel structure here)
+            substate (bool): default setting is False, True when targeting substate
 
         Returns:
             str: file path
         """
+        calculation_path = self.calculation_path()
         for folder in os.listdir(calculation_path):
             state_name = self.state_name(num, substate)
             if state_name.endswith("*"):
@@ -551,3 +562,13 @@ class TomlReader:
         list = self.product_list_num()
         name_list = [self.state_name(x) for x in list]
         return name_list
+    
+    def reference_state(self) -> int:
+        """Get the numbering of energy reference state.
+
+        Returns:
+            int: numbering of  energy reference state
+        """
+        for i in range(self.num_states):
+            if "reference_state" in self.data["state"][str(i)]:
+                return i

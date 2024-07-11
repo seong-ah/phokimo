@@ -72,5 +72,7 @@ def fraction(spacing: int, time: np.ndarray, conc: np.ndarray, product_list_name
 
     plt.plot(time, fractions)
     plt.legend(product_list_name)
+    plt.xlabel("time (s)")
+    plt.ylabel("Concentration fraction")
     plt.show()
     print("{:.0f}, {:.0f}".format(fractions[spacing-1][0] * 100, fractions[spacing-1][1] * 100))

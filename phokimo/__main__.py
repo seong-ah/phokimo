@@ -24,14 +24,15 @@ def main() -> None:
     # Get the directory of the currently executing Python script
     current_dir = os.path.dirname(os.path.abspath(__file__))
 
-    # Assume the TOML file is in the same directory as the Python script
-    # Modify "s1_dynamics.toml" for suitable set-up toml file
-    toml_file_path = os.path.join(current_dir, "ethylene_s1_dynamics.toml")
-
-    # Absolute path of calculation folders: assume that all folders have same structure in parallel (calculation_path/sp/tc.out)
-    calculation_path = "/home/guests/schoi/kinetic/ethylene/"
+    # Assume the TOML file is in the same directory as the __main__.py
+    # Modify toml_file_path for suitable set-up toml file
+    toml_file_path = os.path.join(current_dir, "azobenzene_s2_dynamics.toml")
 
     toml_data = TomlReader(toml_file_path)
+
+    # Absolute path of calculation folders: assume that all folders have same structure in parallel (calculation_path/sp/tc.out)
+    calculation_path = toml_data.calculation_path()
+
     num_states = toml_data.num_states()
 
     visualize_state_list_name = toml_data.visualize_state_list_name()
@@ -46,6 +47,7 @@ def main() -> None:
 
     rates = reactions.rates(state_list_energy)
 
+    reference_state = toml_data.reference_state()
     reactant_name = toml_data.reactant_name()
     reactant_num = toml_data.reactant_num()
     product_list_name = toml_data.product_list_name()
@@ -69,7 +71,7 @@ def main() -> None:
 
     """ Plot Energies(eV) """
 
-    relative_energy = [(x - state_list_hartree[7]) for x in state_list_hartree] # Eh
+    relative_energy = [(x - state_list_hartree[1]) for x in state_list_hartree] # Eh, zero energy should be assigned
     relative_energy_numpy = np.asarray(relative_energy)
     relative_energy_ev = energy_unit(relative_energy_numpy, "eh", "ev") # Relative energy from TAB in eV
     visualize_state_list_ev = [np.round(x, 2) for x in relative_energy_ev]
@@ -86,13 +88,15 @@ def main() -> None:
     print(table)
 
     spacing = 10000
-    time = np.linspace(0, 10 ** (-7), spacing)
+    time = np.linspace(0, 10 ** (-5), spacing)
 
     func = partial(construct_ode, table=table, rates=rates)
     conc = odeint(func, start_conc, time)
 
     plt.plot(time, conc)
     plt.legend(visualize_state_list_name)
+    plt.xlabel("time (s)")
+    plt.ylabel("Concentration")
     plt.show()
 
     """ Plotting fractions """
