@@ -34,7 +34,7 @@ def graph_builder():
 
     # Assume the TOML file is in the same directory as the Python script
     # Modify "s1_dynamics.toml" for suitable set-up toml file
-    toml_relative_file_path = os.path.join(current_dir, "..", "azobenzene_s2_dynamics.toml")
+    toml_relative_file_path = os.path.join(current_dir, "..", "ethylene_s1_dynamics.toml")
     toml_file_path = os.path.abspath(toml_relative_file_path)
 
     toml_data = TomlReader(toml_file_path)
@@ -54,7 +54,7 @@ def graph_builder():
         list = [str(state_list_num[i]), state_list_name[i]]
         gp_nodes.append(tuple(list))
     for node, label in gp_nodes:
-        name_tree.node(node, label, shape = 'plaintext')
+        name_tree.node(node, label, shape = 'box')
     print(gp_nodes)
 
     # Add edges
