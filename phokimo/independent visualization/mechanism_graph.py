@@ -34,7 +34,7 @@ def graph_builder():
 
     # Assume the TOML file is in the same directory as the Python script
     # Modify "s1_dynamics.toml" for suitable set-up toml file
-    toml_relative_file_path = os.path.join(current_dir, "..", "ethylene_s1_dynamics.toml")
+    toml_relative_file_path = os.path.join(current_dir, "..", "azobenzene_s2_dynamics.toml")
     toml_file_path = os.path.abspath(toml_relative_file_path)
 
     toml_data = TomlReader(toml_file_path)
@@ -42,6 +42,8 @@ def graph_builder():
     state_list_name = toml_data.visualize_state_list_name()
     state_list_num = toml_data.state_list_num()
     graph_table_num = remove_duplicates(toml_data.graph_table_num())
+    reactant_num = toml_data.reactant_num()
+    product_list_num = toml_data.product_list_num()
 
     # Create a graph
     name_tree = gp.Digraph()
@@ -54,7 +56,12 @@ def graph_builder():
         list = [str(state_list_num[i]), state_list_name[i]]
         gp_nodes.append(tuple(list))
     for node, label in gp_nodes:
-        name_tree.node(node, label, shape = 'box')
+        if int(node) == reactant_num:
+            name_tree.node(node, label, shape = 'box', style = 'filled', fillcolor = 'slategray1')
+        elif int(node) in product_list_num:
+            name_tree.node(node, label, shape = 'box', style = 'filled', fillcolor = 'lavender' )
+        else:
+            name_tree.node(node, label, shape = 'box', style = 'filled', fillcolor = 'lightyellow')
     print(gp_nodes)
 
     # Add edges
