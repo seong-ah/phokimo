@@ -19,24 +19,32 @@ class State_Values:
         """
         self.toml = toml
 
-    def terachem_output(self, num: int, calculation_path: str, max_roots: int = 5, substate = False) -> tuple:
+    def terachem_output(self, num: int, calculation_path: str, max_roots: int = 5, substate: bool = False, hhtda: bool = True) -> tuple:
         """Get the energy and oscillation strength from terachem output.
 
         Args:
             num (int): numbering of the searching state
             calculation_path (str): absolute path of calculation directory
-            max_roots (int, optional): Number of roots to extract from. Defaults to 3.
+            max_roots (int, optional): Number of roots to extract from. Defaults to 5.
 
         Returns:
             tuple: energies (Eh) and oscillator strengths (-)
         """
-        file_path = self.toml.file_path(num, calculation_path, substate)
+        file_path = self.toml.file_path(num, substate, hhtda)
+        print(file_path)
         assert os.path.exists(file_path)
         terachem = TeraChemOutputReader(file_path)
-        
-        return terachem.ci_energy(max_roots)
+        if self.toml.mult(num) == 2 or hhtda == False:
+            with open(file_path, 'r') as file:
+                for line in file:
+                    if "FINAL ENERGY:" in line:
+                        energy_value = line.split()[2]
+                        break
+        else:
+            energy_value = terachem.ci_energy(max_roots)
+        return energy_value
 
-    def state_list_hartree(self, calculation_path: str) -> np.ndarray:
+    def state_list_hartree(self, calculation_path: str, hhtda = True) -> np.ndarray:
         """Generate a list with a hartree energy(Eh) of each state.
 
         Args:
@@ -50,12 +58,31 @@ class State_Values:
             hartree_energy = 0.0
             if self.toml.substate_existence(i):
                 for j in self.toml.substate_list(i):
-                    hartree_energy += self.terachem_output(j, calculation_path, substate = True)[0][self.toml.target_spin_state(j, substate = True)[0]]
+                    if hhtda == True:
+                        hartree_energy += self.terachem_output(j, calculation_path, substate = True)[0][self.toml.target_spin_state(j, substate = True)[0]]
+                    else:
+                        hartree_energy += self.terachem_output(j, calculation_path, substate = True, hhtda = False)
             else:
-                hartree_energy = (self.terachem_output(i, calculation_path)[0][self.toml.target_spin_state(i)[0]] + self.terachem_output(i, calculation_path)[0][self.toml.target_spin_state(i)[1]]) / 2
+                if hhtda == True:
+                    hartree_energy = (self.terachem_output(i, calculation_path)[0][self.toml.target_spin_state(i)[0]] + self.terachem_output(i, calculation_path)[0][self.toml.target_spin_state(i)[1]]) / 2
+                else:
+                    hartree_energy = self.terachem_output(i, calculation_path, hhtda = False)
             state_list_hartree[i] = hartree_energy
-
         return state_list_hartree
+    
+    def state_relative_list_hartree(self, calculation_path: str) -> np.ndarray:
+        num_states = self.toml.num_states()
+        reference_state = self.toml.reference_state()
+        state_list_hartree = self.state_list_hartree(calculation_path)
+        original_file_path = self.toml.file_path(reference_state)
+        state_relative_list_energy = [(x - state_list_hartree[reference_state]) for x in state_list_hartree]
+        for i in range(num_states):
+            if self.toml.mult(i) == 2:
+                directory, filename = os.path.split(original_file_path)
+                reference_energy = self.terachem_output(reference_state, calculation_path, hhtda = False)
+                absolute_energy = self.terachem_output(i, calculation_path, hhtda = False)
+                state_relative_list_energy[i] = absolute_energy - reference_energy
+        return np.asarray(state_relative_list_energy)
 
     def state_list_energy(self, calculation_path: str) -> np.ndarray:
         """Generate a list with a energy(J/mol) of each state.
@@ -63,7 +90,7 @@ class State_Values:
         Returns:
             list: energy(J/mol) of each state
         """
-        state_list_energy = energy_unit(self.state_list_hartree(calculation_path), "eh", "j/mol")
+        state_list_energy = energy_unit(self.state_relative_list_hartree(calculation_path), "eh", "j/mol")
         return state_list_energy
 
     def oscilstr(self, calculation_path: str) -> list[tuple]:

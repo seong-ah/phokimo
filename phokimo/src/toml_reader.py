@@ -351,7 +351,7 @@ class TomlReader:
         """
         return self.data["molecule"]["calculation_path"]
 
-    def file_path(self, num: int, substate = False) -> str:
+    def file_path(self, num: int, substate = False, hhtda = True) -> str:
         """Get the file path of the given state.
 
         For the optimized(minimized) states, using the corresponding folder of the given state name.
@@ -360,6 +360,7 @@ class TomlReader:
         Args:
             num (int): numbering of the searching state
             substate (bool): default setting is False, True when targeting substate
+            hhtda (bool): default setting is True, False when calculation is not done by hhtda
 
         Returns:
             str: file path
@@ -373,7 +374,10 @@ class TomlReader:
                 target_folder_name = state_name
 
             if folder.endswith(target_folder_name):
-                file_path = os.path.join(calculation_path, folder, "sp", "tc.out")
+                if self.mult(num) == 2 or hhtda == False:
+                    file_path = os.path.join(calculation_path, folder, "dft_sp", "tc.out")
+                else:
+                    file_path = os.path.join(calculation_path, folder, "sp", "tc.out")
         return file_path
 
     def start_conc(self) -> list:
@@ -569,6 +573,6 @@ class TomlReader:
         Returns:
             int: numbering of  energy reference state
         """
-        for i in range(self.num_states):
+        for i in range(self.num_states()):
             if "reference_state" in self.data["state"][str(i)]:
                 return i
