@@ -59,7 +59,7 @@ class TomlReader:
         """
         return len(self.data["state"])
 
-    def mult(self, num: int) -> int:
+    def mult(self, num: int, substate = False) -> int:
         """Extract the spin multiplicity
 
         If the searching state is intersection, extract the lower one.
@@ -70,7 +70,10 @@ class TomlReader:
         Returns:
             int: spin multiplicity
         """
-        return self.data["state"][str(num)]["spin_multiplicity"]
+        if substate == True:
+            return self.data["substate"][str(num)]["spin_multiplicity"]
+        else:
+            return self.data["state"][str(num)]["spin_multiplicity"]
 
     def target_spin_state(self, num: int, substate = False) -> int:
         """Extract the target spin state.
@@ -374,7 +377,7 @@ class TomlReader:
                 target_folder_name = state_name
 
             if folder.endswith(target_folder_name):
-                if self.mult(num) == 2 or hhtda == False:
+                if self.mult(num, substate) == 2 or hhtda == False:
                     file_path = os.path.join(calculation_path, folder, "dft_sp", "tc.out")
                 else:
                     file_path = os.path.join(calculation_path, folder, "sp", "tc.out")

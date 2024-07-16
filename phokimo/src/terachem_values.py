@@ -31,14 +31,13 @@ class State_Values:
             tuple: energies (Eh) and oscillator strengths (-)
         """
         file_path = self.toml.file_path(num, substate, hhtda)
-        print(file_path)
         assert os.path.exists(file_path)
         terachem = TeraChemOutputReader(file_path)
         if self.toml.mult(num) == 2 or hhtda == False:
             with open(file_path, 'r') as file:
                 for line in file:
                     if "FINAL ENERGY:" in line:
-                        energy_value = line.split()[2]
+                        energy_value = float(line.split()[2])
                         break
         else:
             energy_value = terachem.ci_energy(max_roots)
@@ -58,12 +57,12 @@ class State_Values:
             hartree_energy = 0.0
             if self.toml.substate_existence(i):
                 for j in self.toml.substate_list(i):
-                    if hhtda == True:
+                    if hhtda == True and self.toml.mult(j, substate = True) != 2:
                         hartree_energy += self.terachem_output(j, calculation_path, substate = True)[0][self.toml.target_spin_state(j, substate = True)[0]]
                     else:
                         hartree_energy += self.terachem_output(j, calculation_path, substate = True, hhtda = False)
             else:
-                if hhtda == True:
+                if hhtda == True and self.toml.mult(i) != 2:
                     hartree_energy = (self.terachem_output(i, calculation_path)[0][self.toml.target_spin_state(i)[0]] + self.terachem_output(i, calculation_path)[0][self.toml.target_spin_state(i)[1]]) / 2
                 else:
                     hartree_energy = self.terachem_output(i, calculation_path, hhtda = False)
@@ -74,13 +73,11 @@ class State_Values:
         num_states = self.toml.num_states()
         reference_state = self.toml.reference_state()
         state_list_hartree = self.state_list_hartree(calculation_path)
-        original_file_path = self.toml.file_path(reference_state)
         state_relative_list_energy = [(x - state_list_hartree[reference_state]) for x in state_list_hartree]
         for i in range(num_states):
             if self.toml.mult(i) == 2:
-                directory, filename = os.path.split(original_file_path)
                 reference_energy = self.terachem_output(reference_state, calculation_path, hhtda = False)
-                absolute_energy = self.terachem_output(i, calculation_path, hhtda = False)
+                absolute_energy = state_list_hartree[i]
                 state_relative_list_energy[i] = absolute_energy - reference_energy
         return np.asarray(state_relative_list_energy)
 

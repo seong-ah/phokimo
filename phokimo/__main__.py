@@ -42,7 +42,6 @@ def main() -> None:
     reactions = Reactions(toml_data, rate_formula)
 
     state_data = State_Values(toml_data)
-    state_list_hartree = state_data.state_list_hartree(calculation_path)
     state_list_energy = state_data.state_list_energy(calculation_path)
 
     rates = reactions.rates(state_list_energy)
@@ -73,7 +72,7 @@ def main() -> None:
 
     relative_energy = state_data.state_list_energy(calculation_path) #J/mol
     relative_energy_numpy = np.asarray(relative_energy)
-    relative_energy_ev = energy_unit(relative_energy_numpy, "J/mol", "ev") # Relative energy from TAB in eV
+    relative_energy_ev = energy_unit(relative_energy_numpy, "j/mol", "ev") # Relative energy in eV
     visualize_state_list_ev = [np.round(x, 2) for x in relative_energy_ev]
     print(visualize_state_list_name)
     print(visualize_state_list_ev)
@@ -87,8 +86,8 @@ def main() -> None:
     table = toml_data.reaction_list()
     print(table)
 
-    spacing = 10000
-    time = np.linspace(0, 10 ** (-5), spacing)
+    spacing = 1000
+    time = np.linspace(0, 10 ** (-11), spacing)
 
     func = partial(construct_ode, table=table, rates=rates)
     conc = odeint(func, start_conc, time)
