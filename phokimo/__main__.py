@@ -26,7 +26,7 @@ def main() -> None:
 
     # Assume the TOML file is in the same directory as the __main__.py
     # Modify toml_file_path for suitable set-up toml file
-    toml_file_path = os.path.join(current_dir, "azobenzene_s2_dynamics.toml")
+    toml_file_path = os.path.join(current_dir, "ethylene_s1_dynamics.toml")
 
     toml_data = TomlReader(toml_file_path)
 
@@ -42,7 +42,6 @@ def main() -> None:
     reactions = Reactions(toml_data, rate_formula)
 
     state_data = State_Values(toml_data)
-    state_list_hartree = state_data.state_list_hartree(calculation_path)
     state_list_energy = state_data.state_list_energy(calculation_path)
 
     rates = reactions.rates(state_list_energy)
@@ -71,15 +70,15 @@ def main() -> None:
 
     """ Plot Energies(eV) """
 
-    relative_energy = [(x - state_list_hartree[1]) for x in state_list_hartree] # Eh, zero energy should be assigned
+    relative_energy = state_data.state_list_energy(calculation_path) #J/mol
     relative_energy_numpy = np.asarray(relative_energy)
-    relative_energy_ev = energy_unit(relative_energy_numpy, "eh", "ev") # Relative energy from TAB in eV
+    relative_energy_ev = energy_unit(relative_energy_numpy, "j/mol", "ev") # Relative energy in eV
     visualize_state_list_ev = [np.round(x, 2) for x in relative_energy_ev]
     print(visualize_state_list_name)
     print(visualize_state_list_ev)
 
     plt.scatter(visualize_state_list_name, visualize_state_list_ev, s=900, marker="_", linewidth=2, zorder=3)
-    [plt.text(x, y, str(y), ha="left", va="bottom", fontsize=10) for x, y in zip(range(len(visualize_state_list_name)), visualize_state_list_ev)]
+    [plt.text(x, y, str(y), ha="center", va="bottom", fontsize=10) for x, y in zip(range(len(visualize_state_list_name)), visualize_state_list_ev)]
 
     plt.show()
 
@@ -87,8 +86,8 @@ def main() -> None:
     table = toml_data.reaction_list()
     print(table)
 
-    spacing = 10000
-    time = np.linspace(0, 10 ** (-5), spacing)
+    spacing = 1000
+    time = np.linspace(0, 10 ** (-11), spacing)
 
     func = partial(construct_ode, table=table, rates=rates)
     conc = odeint(func, start_conc, time)
