@@ -569,6 +569,6 @@ class TomlReader:
         Returns:
             int: numbering of  energy reference state
         """
-        for i in range(self.num_states):
+        for i in range(self.num_states()):
             if "reference_state" in self.data["state"][str(i)]:
                 return i

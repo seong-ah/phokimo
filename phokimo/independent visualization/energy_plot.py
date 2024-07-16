@@ -18,13 +18,14 @@ def energyplot():
 
     toml_data = TomlReader(toml_absolute_file_path)
     list = toml_data.visualize_state_list_name()
+    print(list)
     name_list = ['TAB*', 'TAB', 'CAB', 'S1 min', 'S1/S0 reactive', 'S1/S0 unreactive', 'S1 bar']
     energy_list = [2.95, 0.0, 0.59, 2.33, 2.27, 2.79, 2.47]
 
     x = ["S1/S0 unreactive", "TAB", "TAB", "S1 min", "S1 bar", "S1/S0 reactive", "CAB"]
-    y = [2.79, 0.0, 2.95, 2.33, 2.47, 2.27, 0.59]
+    y = [2.79, 0, 2.95, 2.33, 2.47, 2.27, 0.59]
 
-    pairs = [(0, 1), (0, 2), (2, 3), (3, 4), (4, 5), (1, 5), (5, 6)]
+    pairs = [(0, 1), (1, 2), (2, 0), (2, 3), (3, 4), (4, 5), (5, 1), (5, 6)]
 
     unique_x = []
     for item in x:
@@ -36,27 +37,46 @@ def energyplot():
     x_numeric = np.array([x_numeric_map[label] for label in x])
     print(x_numeric)
 
-    plt.scatter(x_numeric, y, s=900, marker="_", linewidth=2, zorder=3)
+    plt.scatter(x_numeric, y, s=900, marker="_", linewidth=2, zorder=3, color = 'maroon')
 
     for i, j in pairs:
         offset = 0.1
-        
-        start_x = x_numeric[i] + offset
-        end_x = x_numeric[j] - offset
-        plt.plot([start_x, end_x], [y[i], y[j]], linestyle='--', color='gray')
+        if x[i] == x[j]:
+            start_x = x_numeric[j]
+            start_y = y[j]
+            end_x = x_numeric[i]
+            end_y = y[i]
+        else: 
+            if i > j:
+                start_x = x_numeric[j] + offset
+                start_y = y[j]
+                end_x = x_numeric[i] - offset
+                end_y = y[i]
+            else:
+                start_x = x_numeric[i] + offset
+                start_y = y[i]
+                end_x = x_numeric[j] - offset
+                end_y = y[j]
+        plt.plot([start_x, end_x], [start_y, end_y], linestyle='--', color='rosybrown')
 
         # Calculate and annotate the difference
         difference = np.round(y[j] - y[i], 2)
-        if (i, j) == (0, 2) or (i, j) == (1, 5):
-            difference = - difference
-        plt.text((start_x + end_x) / 2, (y[i] + y[j]) / 2, f'{difference}', color='red', fontsize=8, ha='center', va='bottom')
+        if (i-j) * difference < 0:
+            plt.text((start_x + end_x) / 2 - 0.05, (y[i] + y[j]) / 2 + 0.05, f'{difference}', fontsize=10, ha='right', va='bottom', font = 'Arial', weight = 'bold')
+        else:
+            plt.text((start_x + end_x) / 2 + 0.05, (y[i] + y[j]) / 2 + 0.05, f'{difference}', fontsize=10, ha='left', va='bottom', font = 'Arial', weight = 'bold')
         # plt.plot([x[i], x[j]], [y[i], y[j]], linestyle='--', color='gray')
 
-    plt.xticks(range(len(unique_x)), unique_x)
+    plt.xticks(range(len(unique_x)), unique_x, fontweight = 'bold')
 
     for i, label in enumerate(y):
-        plt.text(x_numeric[i], y[i], label, ha='left', va='center', fontsize=8)
+        print(i, toml_data.reference_state())
+        if toml_data.reference_state() == i:
+            plt.text(x_numeric[i], y[i] - 0.02, label, ha='center', va='top', fontsize=10, font = 'Arial', weight = 'bold')
+        else:
+            plt.text(x_numeric[i], y[i] + 0.01, label, ha='center', va='bottom', fontsize=10, font = 'Arial', weight = 'bold')
 
+    plt.ylabel('Relative energy (eV)', font = 'Arial', fontweight = 'bold', fontsize = 12)
     plt.show()
 
 energyplot()

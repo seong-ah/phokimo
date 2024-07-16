@@ -34,7 +34,7 @@ def graph_builder():
 
     # Assume the TOML file is in the same directory as the Python script
     # Modify "s1_dynamics.toml" for suitable set-up toml file
-    toml_relative_file_path = os.path.join(current_dir, "..", "azobenzene_s2_dynamics.toml")
+    toml_relative_file_path = os.path.join(current_dir, "..", "ethylene_s1_dynamics.toml")
     toml_file_path = os.path.abspath(toml_relative_file_path)
 
     toml_data = TomlReader(toml_file_path)
@@ -50,20 +50,6 @@ def graph_builder():
 
     name_tree.node_attr.update(fontname='Arial')
 
-    # Add nodes
-    gp_nodes = []
-    for i in range(len(state_list_name)):
-        list = [str(state_list_num[i]), state_list_name[i]]
-        gp_nodes.append(tuple(list))
-    for node, label in gp_nodes:
-        if int(node) == reactant_num:
-            name_tree.node(node, label, shape = 'box', style = 'filled', fillcolor = 'slategray1')
-        elif int(node) in product_list_num:
-            name_tree.node(node, label, shape = 'box', style = 'filled', fillcolor = 'lavender' )
-        else:
-            name_tree.node(node, label, shape = 'box', style = 'filled', fillcolor = 'lightyellow')
-    print(gp_nodes)
-
     # Add edges
     gp_edges = []
     for init, fin in graph_table_num:
@@ -72,6 +58,29 @@ def graph_builder():
     for edge in gp_edges:
         name_tree.edge(*edge, splines ='line')
     print(gp_edges)
+
+    # Add nodes
+    gp_nodes = []
+    for i in range(len(state_list_name)):
+        list = [str(state_list_num[i]), state_list_name[i]]
+        gp_nodes.append(tuple(list))
+    edges_num = {item for sublist in gp_edges for item in sublist}
+    remove_node = [str(item[0]) for item in gp_nodes if str(item[0]) in edges_num]
+    new_nodes = []
+    for i in remove_node:
+        for j in range(len(gp_nodes)):
+            if gp_nodes[j][0] == i:
+                new_nodes.append(gp_nodes[j])
+
+
+    for node, label in new_nodes:
+        if int(node) == reactant_num:
+            name_tree.node(node, label, shape = 'box', style = 'filled', fillcolor = 'slategray1')
+        elif int(node) in product_list_num:
+            name_tree.node(node, label, shape = 'box', style = 'filled', fillcolor = 'lavender' )
+        else:
+            name_tree.node(node, label, shape = 'box', style = 'filled', fillcolor = 'lightyellow')
+    print(gp_nodes)
 
     name_tree.render('example_graph', format='svg', view=True)
 
