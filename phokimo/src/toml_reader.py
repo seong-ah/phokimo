@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 import os
+import networkx as nx
+from collections import defaultdict
 
 import numpy as np
 import toml
@@ -47,6 +49,9 @@ class TomlReader:
         """
         normal_modes = self._total_atoms() * 3 - 6
         return normal_modes
+    
+    def duration(self) -> float:
+        return float(self.data["molecule"]["duration"]) * 10 ** (-15) #fs
 
     def num_states(self) -> int:
         """Get the total number of states of the modeling.
@@ -567,7 +572,7 @@ class TomlReader:
             list[int]: list of name of the products
         """
         list = self.product_list_num()
-        name_list = [self.state_name(x) for x in list]
+        name_list = [self.visualize_state_name(x) for x in list]
         return name_list
     
     def reference_state(self) -> int:
@@ -579,3 +584,48 @@ class TomlReader:
         for i in range(self.num_states()):
             if "reference_state" in self.data["state"][str(i)]:
                 return i
+            
+    def spin_list(self, spin: int, target: int) -> list:
+        list = []
+        for num in range(self.num_states()):
+            if self.data["state"][str(num)]["spin_multiplicity"] == spin and self.data["state"][str(num)]["target_spin_state"] == target:
+                list.append(num)
+        return list
+    
+    def _max_target(self) -> int:
+        target_list = []
+        for i in range(self.num_states()):
+            target = self.data["state"][str(i)]["target_spin_state"]
+            if type(target) != list:
+                target_list.append(int(target))
+        return max(target_list) + 1
+    
+    def spin_list_dict(self, spin: int) -> dict:
+        list_dict = {}
+        for i in range(self._max_target()):
+            list_dict[i] = self.spin_list(spin, i)
+        return list_dict
+    
+    def graph_group(self) -> dict:
+        G = nx.DiGraph()
+        edges = self.reaction_list()
+        G.add_edges_from(edges)
+        
+        root = self.reactant_num()
+
+        def get_descendants(G, node):
+            descendants = []
+            for child in G.successors(node):
+                descendants.append((node, child))
+                descendants.extend(get_descendants(G, child))
+            return descendants
+        
+        parent_groups = defaultdict(list)
+        direct_children = list(G.successors(root))
+
+        for parent in direct_children:
+            descendants = get_descendants(G, parent)
+            if descendants:
+                parent_groups[parent].extend(descendants)
+
+        return parent_groups

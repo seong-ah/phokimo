@@ -9,7 +9,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 from scipy.integrate import odeint
 
-from phokimo.src.additioanl_graphing import fraction, graph_builder
+from phokimo.src.additional_graphing import product_fraction, graph_builder, expfitting
 from phokimo.src.ode_builder import construct_ode
 from phokimo.src.rate_constants import RateCalculator
 from phokimo.src.terachem_values import Reactions, State_Values
@@ -44,8 +44,15 @@ def main() -> None:
     state_data = State_Values(toml_data)
     state_list_energy = state_data.state_list_energy(calculation_path)
 
-    rates = reactions.rates(state_list_energy)
+    graph_group = toml_data.graph_group()
+    print("graph group", graph_group)
 
+    # state_list_energy[10] = 385600.0
+    # state_list_energy[10] = 367800.0
+
+    # rates = reactions.rates(state_list_energy)
+
+    spin_list_dict = toml_data.spin_list_dict(1)
     reference_state = toml_data.reference_state()
     reactant_name = toml_data.reactant_name()
     reactant_num = toml_data.reactant_num()
@@ -63,43 +70,54 @@ def main() -> None:
     np.set_printoptions(formatter={"float_kind": custom_formatter})
     np.set_printoptions(suppress=False, precision=2)
 
-    for i in range(num_states):
-        for j in range(num_states):
-            if rates[i][j] != 0:
-                print(visualize_state_list_name[i], visualize_state_list_name[j], rates[i][j])
-
     """ Plot Energies(eV) """
-
-    relative_energy = state_data.state_list_energy(calculation_path) #J/mol
-    relative_energy_numpy = np.asarray(relative_energy)
+    
+    relative_energy_numpy = np.asarray(state_list_energy)
     relative_energy_ev = energy_unit(relative_energy_numpy, "j/mol", "ev") # Relative energy in eV
+    # relative_energy_ev_zpe = [a + b for a, b in zip(relative_energy_ev, zpe)]
+    # relative_relative_energy_ev_zpe = np.asarray([x - relative_energy_ev_zpe[reference_state] for x in relative_energy_ev_zpe])
+    # relative_relative_energy_jmol_zpe = energy_unit(relative_relative_energy_ev_zpe, "ev", "j/mol")
     visualize_state_list_ev = [np.round(x, 2) for x in relative_energy_ev]
     print(visualize_state_list_name)
     print(visualize_state_list_ev)
 
     plt.scatter(visualize_state_list_name, visualize_state_list_ev, s=900, marker="_", linewidth=2, zorder=3)
     [plt.text(x, y, str(y), ha="center", va="bottom", fontsize=10) for x, y in zip(range(len(visualize_state_list_name)), visualize_state_list_ev)]
+    plt.ylabel("rel.energy (eV)")
 
     plt.show()
+
+    rates = reactions.rates(state_list_energy)
+
+    for i in range(num_states):
+        for j in range(num_states):
+            if rates[i][j] != 0:
+                print(visualize_state_list_name[i], visualize_state_list_name[j], f"{rates[i][j]:.2e}")
 
     """ Solving ode """
     table = toml_data.reaction_list()
     print(table)
 
-    spacing = 1000
-    time = np.linspace(0, 10 ** (-11), spacing)
+    duration = toml_data.duration()
+    spacing = 100000
+    time = np.linspace(0, duration, spacing)
 
     func = partial(construct_ode, table=table, rates=rates)
     conc = odeint(func, start_conc, time)
 
-    plt.plot(time, conc)
+    x_axis = [i * 10 ** (15) for i in time] #fs
+
+    plt.plot(x_axis, conc)
     plt.legend(visualize_state_list_name)
-    plt.xlabel("time (s)")
+    plt.xlabel("time (fs)")
     plt.ylabel("Concentration")
     plt.show()
 
+    expfitting(time, x_axis, spin_list_dict, conc)
+    # timeconstant(product_list_num, time, conc)
+
     """ Plotting fractions """
-    fraction(spacing, time, conc, product_list_name, product_list_num)
+    product_fraction(spacing, time, x_axis, conc, product_list_name, product_list_num)
 
 if __name__ == "__main__":
     main()

@@ -5,6 +5,7 @@ import os
 import numpy as np
 
 from phokimo.src.io.terachem import TeraChemOutputReader
+from scipy import constants
 from tcgm_lib.convert.converter import energy_unit
 
 
@@ -152,6 +153,15 @@ class Reactions:
                         dE = state_list_energy[final_num] - state_list_energy[init_num]
                         dEs[init_num][final_num] = dE
         return dEs
+    
+    def T_eq(self, state_list_energy: list, i: int):
+        R_GAS = constants.R
+
+        graph_group = self.toml.graph_group()
+        reactant = self.toml.reactant_num()
+        total_atoms = self.toml.total_atoms()
+
+        return 300 + (state_list_energy[reactant] - state_list_energy[i]) / ((3 * total_atoms - 6) * R_GAS)
 
     def rates(self, state_list_energy: list) -> np.ndarray:
         """Calculate the rate constants of each reaction.
@@ -165,18 +175,32 @@ class Reactions:
         dim = (self.toml.num_states(), self.toml.num_states())
         rates = np.zeros(dim)
 
+        graph_group = self.toml.graph_group()
+        reactant = self.toml.reactant_num()
+
         reaction_types = self.toml.reaction_types()
         dEs = self.dEs(state_list_energy)
 
         total_atoms = float(self.toml.total_atoms())
         normal_modes = 1.0  # Should be extended later for each reaction
 
+        first_iteration = True
+
         for i in range(self.toml.num_states()):
             for j in range(self.toml.num_states()):
-                if reaction_types[i][j] == 1:
-                    rate_constant = self.rate_constant.reaction_theory.compute_rate(dEs[i][j])
-                    rates[i][j] = rate_constant
-                if reaction_types[i][j] == 2:
-                    rate_constant = self.rate_constant.relaxation_theory.compute_rate(dEs[i][j], normal_modes, total_atoms)
-                    rates[i][j] = rate_constant
+                if i == reactant:
+                    if reaction_types[i][j] == 2:
+                        rate_constant = self.rate_constant.relaxation_theory.compute_rate(dEs[i][j], normal_modes, total_atoms, T = 300)
+                        rates[i][j] = rate_constant
+                else:
+                    for key in graph_group:
+                        T_eq = self.T_eq(state_list_energy, key)
+                        if (i, j) in graph_group.get(key, []):
+                            print(key, T_eq)
+                            print (i, j)
+                            if reaction_types[i][j] == 1:
+                                rate_constant = self.rate_constant.reaction_theory.compute_rate(dEs[i][j], T = T_eq)
+                            elif reaction_types[i][j] == 2:
+                                rate_constant = self.rate_constant.relaxation_theory.compute_rate(dEs[i][j], normal_modes, total_atoms, T = T_eq)
+                            rates[i][j] = rate_constant
         return rates
