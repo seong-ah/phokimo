@@ -7,7 +7,7 @@ import networkx as nx
 import numpy as np
 import graphviz as gp
 from graphviz import Source
-import pydot as pd
+from scipy.optimize import curve_fit
 
 
 def graph_builder(state_list_name: list, state_list_num: list, graph_table_name: list, graph_table_num: list) -> list[tuple]:
@@ -46,7 +46,7 @@ def graph_builder(state_list_name: list, state_list_num: list, graph_table_name:
 
     name_tree.render('example_graph', format='svg', view=True)
 
-def fraction(spacing: int, time: np.ndarray, conc: np.ndarray, product_list_name: list[str], product_list_num: list[int]) -> None:
+def product_fraction(spacing: int, time: np.ndarray, x_axis: np.ndarray, conc: np.ndarray, product_list_name: list[str], product_list_num: list[int]) -> None:
     """A tool to plot fraction of products.
 
     Args:
@@ -70,9 +70,41 @@ def fraction(spacing: int, time: np.ndarray, conc: np.ndarray, product_list_name
             state = product_list_num[j]
             fractions[i][j] = conc[i][state] / denominator
 
-    plt.plot(time, fractions)
+    plt.plot(x_axis, fractions)
     plt.legend(product_list_name)
     plt.xlabel("time (s)")
     plt.ylabel("Concentration fraction")
+    for i in range(len(product_list_num)):
+        print(str(product_list_name[i]), "{:.0f}".format(fractions[spacing-1][i] * 100)+"%")
+
+def expfitting(time: np.ndarray, x_axis: np.bdarray, spin_list_dict: dict, conc: np.ndarray):
+    def exponential_func(x, a, k, c):
+        return a * np.exp(k * x) + c
+    # initial_guess = [-0.3, 10 ** 13, 0]
+    x = time
+    for i in range(len(spin_list_dict)):
+        y = np.zeros(len(time))
+        list = spin_list_dict[i]
+        for j in range(len(time)):
+            for k in list:
+                y[j] += conc[j][k]
+        label = "S" + str(i)
+        plt.scatter(x_axis, y, label = label)
+        try:
+            popt, pcov = curve_fit(exponential_func, x, y)
+            # popt, pcov = curve_fit(exponential_func, x, y, p0 = initial_guess, bounds = (0, np.inf))
+            a, k, c = popt
+            print(a, k, c)
+            print("Time constant ", label, " : ", np.round(1 / abs(k) * 10 ** (12), 2), "ps")
+            y_fit = exponential_func(x, a, k, c)
+            plt.plot(x_axis, y_fit)
+        except RuntimeError as e:
+            print("Optimal parameters not found:", e)
+        
+        print(label, ": ", np.round(y[len(time)-1], 2) * 100, "%")
+        y = np.zeros(len(time))
+
+    plt.legend()
+    plt.xlabel("time (fs)")
+    plt.ylabel("Concentration fraction")
     plt.show()
-    print("{:.0f}, {:.0f}".format(fractions[spacing-1][0] * 100, fractions[spacing-1][1] * 100))
