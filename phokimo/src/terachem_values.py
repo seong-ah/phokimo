@@ -20,7 +20,7 @@ class State_Values:
         """
         self.toml = toml
 
-    def terachem_output(self, num: int, calculation_path: str, max_roots: int = 5, substate: bool = False, hhtda: bool = True) -> tuple:
+    def terachem_output(self, num: int, calculation_path: str, max_roots: int = 5, substate: bool = False, dft: bool = False) -> float:
         """Get the energy and oscillation strength from terachem output.
 
         Args:
@@ -31,20 +31,23 @@ class State_Values:
         Returns:
             tuple: energies (Eh) and oscillator strengths (-)
         """
-        file_path = self.toml.file_path(num, substate, hhtda)
+        file_path = self.toml.file_path(num, substate, dft)
+        print(file_path)
         assert os.path.exists(file_path)
         terachem = TeraChemOutputReader(file_path)
-        if self.toml.mult(num) == 2 or hhtda == False:
+        target_spin_state = self.toml.target_spin_state(num, substate)
+        if self.toml.theory_level(num, substate) == "dft" or dft == True:
             with open(file_path, 'r') as file:
                 for line in file:
                     if "FINAL ENERGY:" in line:
                         energy_value = float(line.split()[2])
                         break
         else:
-            energy_value = terachem.ci_energy(max_roots)
+            energy_tuple = terachem.ci_energy(max_roots)
+            energy_value = (energy_tuple[0][target_spin_state[0]] + energy_tuple[0][target_spin_state[1]]) / 2
         return energy_value
 
-    def state_list_hartree(self, calculation_path: str, hhtda = True) -> np.ndarray:
+    def state_list_hartree(self, calculation_path: str) -> np.ndarray:
         """Generate a list with a hartree energy(Eh) of each state.
 
         Args:
@@ -56,10 +59,12 @@ class State_Values:
         state_list_hartree = np.zeros(self.toml.num_states())
         for i in range(self.toml.num_states()):
             hartree_energy = 0.0
-            if self.toml.substate_existence(i):
+            if i == self.toml.reference_state():
+                hartree_energy = (self.terachem_output(i, calculation_path)[0][self.toml.target_spin_state(i)[0]] + self.terachem_output(i, calculation_path)[0][self.toml.target_spin_state(i)[1]]) / 2
+            elif self.toml.substate_existence(i):
                 for j in self.toml.substate_list(i):
-                    if hhtda == True and self.toml.mult(j, substate = True) != 2:
-                        hartree_energy += self.terachem_output(j, calculation_path, substate = True)[0][self.toml.target_spin_state(j, substate = True)[0]]
+                    if self.toml.theory_level(i) == "hhtda":
+                        (self.terachem_output(i, calculation_path, substate = True)[0][self.toml.target_spin_state(i)[0]] + self.terachem_output(i, calculation_path, substate = True)[0][self.toml.target_spin_state(i)[1]]) / 2
                     else:
                         hartree_energy += self.terachem_output(j, calculation_path, substate = True, hhtda = False)
             else:
@@ -70,16 +75,27 @@ class State_Values:
             state_list_hartree[i] = hartree_energy
         return state_list_hartree
     
+    # remove raw energy list, directly to relative energy calculation because reference states keep change
+    
     def state_relative_list_hartree(self, calculation_path: str) -> np.ndarray:
         num_states = self.toml.num_states()
         reference_state = self.toml.reference_state()
-        state_list_hartree = self.state_list_hartree(calculation_path)
-        state_relative_list_energy = [(x - state_list_hartree[reference_state]) for x in state_list_hartree]
+        state_relative_list_energy = np.zeros(num_states)
         for i in range(num_states):
-            if self.toml.mult(i) == 2:
-                reference_energy = self.terachem_output(reference_state, calculation_path, hhtda = False)
-                absolute_energy = state_list_hartree[i]
-                state_relative_list_energy[i] = absolute_energy - reference_energy
+            hartree_energy = 0.0
+            if i == reference_state:
+                state_relative_list_energy[i] = 0.0
+            else:
+                if self.toml.substate_existence(i):
+                    for j in self.toml.substate_list(i):
+                        hartree_energy += self.terachem_output(j, calculation_path, substate = True)
+                else:
+                    hartree_energy = self.terachem_output(i, calculation_path)
+                if self.toml.theory_level(i) == "hhtda":
+                    reference_energy = self.terachem_output(reference_state, calculation_path)
+                else:
+                    reference_energy = self.terachem_output(reference_state, calculation_path, dft = True)
+                state_relative_list_energy[i] = hartree_energy - reference_energy
         return np.asarray(state_relative_list_energy)
 
     def state_list_energy(self, calculation_path: str) -> np.ndarray:
