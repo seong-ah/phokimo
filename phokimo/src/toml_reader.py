@@ -176,6 +176,18 @@ class TomlReader:
         assert self.substate_existence(num) == True
 
         return self.data["state"][str(num)]["substate"]
+    
+    def theory_level(self, num: int, substate: bool = False, dft: bool = False) -> str:
+        if num == self.reference_state():
+            if dft == False:
+                return "hhtda"
+            else:
+                return "dft"
+        else:
+            if substate == True:
+                return self.data["substate"][str(num)]["theory_level"]
+            else:
+                return self.data["state"][str(num)]["theory_level"]
 
     def initial_name(self, num: int) -> str:
         """Extract the name of the initial state of the reaction.
@@ -245,7 +257,7 @@ class TomlReader:
         assert self.final_existence(init, fin) == True
         return self.state_num(fin)
 
-    def ts_existence(self, init: int, ts: int):
+    def ts_existence(self, init: int, ts: int) -> bool:
         """Check the existence of the reaction with transition state.
 
         Args:
@@ -359,7 +371,7 @@ class TomlReader:
         """
         return self.data["molecule"]["calculation_path"]
 
-    def file_path(self, num: int, substate = False, hhtda = True) -> str:
+    def file_path(self, num: int, substate: bool = False, dft: bool = False) -> str:
         """Get the file path of the given state.
 
         For the optimized(minimized) states, using the corresponding folder of the given state name.
@@ -368,7 +380,6 @@ class TomlReader:
         Args:
             num (int): numbering of the searching state
             substate (bool): default setting is False, True when targeting substate
-            hhtda (bool): default setting is True, False when calculation is not done by hhtda
 
         Returns:
             str: file path
@@ -382,10 +393,16 @@ class TomlReader:
                 target_folder_name = state_name
 
             if folder.endswith(target_folder_name):
-                if self.mult(num, substate) == 2 or hhtda == False:
-                    file_path = os.path.join(calculation_path, folder, "dft_sp", "tc.out")
+                if num == self.reference_state():
+                    if dft == True:
+                        file_path = os.path.join(calculation_path, folder, "dft_sp", "tc.out")
+                    else:
+                        file_path = os.path.join(calculation_path, folder, "sp", "tc.out")
                 else:
-                    file_path = os.path.join(calculation_path, folder, "sp", "tc.out")
+                    if self.theory_level(num, substate) == "dft":
+                        file_path = os.path.join(calculation_path, folder, "dft_sp", "tc.out")
+                    else:
+                        file_path = os.path.join(calculation_path, folder, "sp", "tc.out")
         return file_path
 
     def start_conc(self) -> list:
