@@ -623,7 +623,7 @@ class TomlReader:
             list_dict[i] = self.spin_list(spin, i)
         return list_dict
     
-    def graph_group(self) -> dict:
+    def graph_temp_group(self) -> dict:
         G = nx.DiGraph()
         edges = self.reaction_list()
         G.add_edges_from(edges)
@@ -646,3 +646,9 @@ class TomlReader:
                 parent_groups[parent].extend(descendants)
 
         return parent_groups
+    
+    def graph_group(self) -> dict:
+        graph_group = self.graph_temp_group()
+        for key in graph_group:
+            graph_group[key].append((self.reactant_num(), key))
+        return graph_group
