@@ -22,7 +22,7 @@ def main() -> None:
     """Run the application."""
     """ Read data from toml file. """
 
-    toml_file = "azobenzene_s1_dynamics.toml"
+    toml_file = "ethylene_s1_dynamics.toml"
 
     # Get the directory of the currently executing Python script
     current_dir = os.path.dirname(os.path.abspath(__file__))

@@ -30,6 +30,11 @@ class TomlReader:
         with open(self.fpath) as file:
             self.data = toml.load(file)
 
+        self.name_to_num = self.state_name_num_dict()
+
+        if 'substate' in self.data:
+            self.sub_name_to_num = self.substate_name_num_dict()
+
     def total_atoms(self) -> int:
         """Extract the number of total atoms in toml file.
 
@@ -51,138 +56,188 @@ class TomlReader:
         return normal_modes
     
     def duration(self) -> float:
+        """Get the duration of the modling. In toml file, time is written as fs
+
+        Returns:
+            float: duration of the modeling (s)
+        """
         return float(self.data["molecule"]["duration"]) * 10 ** (-15) #fs
 
     def num_states(self) -> int:
         """Get the total number of states of the modeling.
-
-        Args:
-            num (int): numbering of the searching state
 
         Returns:
             int: total number of states
         """
         return len(self.data["state"])
 
-    def mult(self, num: int, substate = False) -> int:
+    def mult(self, state: str, substate: bool = False) -> int:
         """Extract the spin multiplicity
 
         If the searching state is intersection, extract the lower one.
 
         Args:
-            num (int): numbering of the searching state
+            state (str): name of the searching state
+            substate (bool): default setting is False, True when targeting substate
 
         Returns:
             int: spin multiplicity
         """
         if substate == True:
-            return self.data["substate"][str(num)]["spin_multiplicity"]
+            return self.data["substate"][state]["spin_multiplicity"]
         else:
-            return self.data["state"][str(num)]["spin_multiplicity"]
+            return self.data["state"][state]["spin_multiplicity"]
 
-    def target_spin_state(self, num: int, substate = False) -> int:
+    def target_spin_state(self, state: str, substate: bool = False) -> int:
         """Extract the target spin state.
 
         Args:
-            num (int): numbering of the searching state
+            state (str): name of the searching state
             substate (bool): default setting is False, True when targeting substate
 
         Returns:
             int: target spin state
         """
         if substate == False:
-            state = self.data["state"][str(num)]["target_spin_state"]
+            spin_state = self.data["state"][state]["target_spin_state"]
         else:
-            state = self.data["substate"][str(num)]["target_spin_state"]
+            spin_state = self.data["substate"][state]["target_spin_state"]
             
-        if type(state) == int:
-            return [state, state]
+        if type(spin_state) == int:
+            return [spin_state, spin_state]
         else:
-            return state
+            return spin_state
 
-    def state_name(self, num: int, substate = False) -> str:
+    def state_name(self, state: str, substate: bool = False) -> str:
         """Extract the state name.
 
         Args:
-            num (int): numbering of the searching state
+            state (str): name of the searching state
             substate (bool): default setting is False, True when targeting substate
 
         Returns:
             str: state name
         """
         if substate == False:
-            return self.data["state"][str(num)]["name"]
+            return self.data["state"][state]["name"]
         else:
-            return self.data["substate"][str(num)]["name"]
+            return self.data["substate"][state]["name"]
     
-    def visualize_state_name(self, num: int) -> str:
+    def visualize_state_name(self, state: str) -> str:
         """Extract the state name for visualization.
 
         Args:
-            num (int): numbering of the searching state
+            state (str): name of the searching state
 
         Returns:
             str: state name for visualization
         """
-        return self.data["state"][str(num)]["visualize_name"]
+        return self.data["state"][state]["visualize_name"]
 
-    def state_num(self, num: int) -> int:
+    def state_name_num_dict(self) -> dict:
+        """Generate number label of each state as dictionary format.
+
+        Returns:
+            dict: dictionary that connects state name and number label
+        """
+        # Create a dictionary to store the mapping of names to their assigned numbers
+        name_num_dict = {}
+
+        # Initialize a counter for numbering
+        counter = 0
+
+        # Iterate through the keys in the original data
+        for name in self.data['state']:
+        
+            # If the name is not already in the mapping, assign it a new number
+            if name not in name_num_dict:
+                name_num_dict[name] = counter
+                counter += 1
+
+        return name_num_dict
+
+    def substate_name_num_dict(self) -> dict:
+        """Generate number label of each state as dictionary format for substates.
+        substate should exist in TOML file, otherwise AssertionError will be raised.
+
+        Returns:
+            dict: dictionary that connects state name and number label
+        """
+        assert 'substate' in self.data
+
+        # Create a dictionary to store the mapping of names to their assigned numbers
+        name_num_dict = {}
+
+        # Initialize a counter for numbering
+        counter = 0
+
+        # Iterate through the keys in the original data
+        for name in self.data["substate"]:
+        
+            # If the name is not already in the mapping, assign it a new number
+            if name not in name_num_dict:
+                name_num_dict[name] = counter
+                counter += 1
+
+        return name_num_dict
+
+    def state_num(self, state: str) -> int:
         """Extract the numbering of the state.
 
         Args:
-            num (int): numbering of the searching state
+            state (str): name of the searching state
 
         Returns:
             int: numbering of the state
         """
-        return num
+        return self.name_to_num[state]
 
-    def conc(self, num: int) -> float:
+    def conc(self, state: str) -> float:
         """Extract the starting concentration.
 
         Args:
-            num (int): numbering of the searching state
+            state (str): name of the searching state
 
         Returns:
             float: starting concentration
         """
-        return self.data["state"][str(num)]["conc"]
+        return self.data["state"][state]["conc"]
     
-    def substate_existence(self, num: int) -> bool:
+    def substate_existence(self, state: str) -> bool:
         """Check substate exists or not.
 
         Args:
-            num (int): numbering of the searching state
+            state (str): name of the searching state
 
         Returns:
             bool: True if substate exists and False for else
         """
-        if 'substate' in self.data["state"][str(num)]:
+        if 'substate' in self.data["state"][state]:
             return True
         else:
             return False
         
-    def substate_list(self, num: int) -> list:
+    def substate_list(self, state: str) -> list:
         """Return list of substates.
 
         substate_existence should be True, otherwise AssertionError will be raised.
         
         Args:
-            num (int): numbering of the searching state
+            state (str): name of the searching state
 
         Returns:
             list: list of substates
         """
-        assert self.substate_existence(num) == True
+        assert self.substate_existence(state) == True
 
-        return self.data["state"][str(num)]["substate"]
+        return self.data["state"][state]["substate"]
     
-    def theory_level(self, num: int, substate: bool = False, dft: bool = False) -> str:
-        if num == self.reference_state():
-            if dft == False:
-                return "hhtda"
+    def theory_level(self, state: str, substate: bool = False, ground: bool = False) -> str:
+        if state == self.reference_state():
+            if ground == False:
+                return "excited"
             else:
-                return "dft"
+                return "ground"
         else:
             if substate == True:
                 return self.data["substate"][str(num)]["theory_level"]
@@ -371,7 +426,7 @@ class TomlReader:
         """
         return self.data["molecule"]["calculation_path"]
 
-    def file_path(self, num: int, substate: bool = False, dft: bool = False) -> str:
+    def file_path(self, num: int, substate: bool = False, ground: bool = False) -> str:
         """Get the file path of the given state.
 
         For the optimized(minimized) states, using the corresponding folder of the given state name.
@@ -394,13 +449,13 @@ class TomlReader:
 
             if folder.endswith(target_folder_name):
                 if num == self.reference_state():
-                    if dft == True:
-                        file_path = os.path.join(calculation_path, folder, "dft_sp", "tc.out")
+                    if ground == True:
+                        file_path = os.path.join(calculation_path, folder, "ground_sp", "tc.out")
                     else:
                         file_path = os.path.join(calculation_path, folder, "sp", "tc.out")
                 else:
-                    if self.theory_level(num, substate) == "dft":
-                        file_path = os.path.join(calculation_path, folder, "dft_sp", "tc.out")
+                    if self.theory_level(num, substate) == "ground":
+                        file_path = os.path.join(calculation_path, folder, "ground_sp", "tc.out")
                     else:
                         file_path = os.path.join(calculation_path, folder, "sp", "tc.out")
         return file_path
@@ -415,18 +470,6 @@ class TomlReader:
         for i in range(self.num_states()):
             start_conc[i] = self.conc(i)
         return start_conc
-
-    def state_list_name(self) -> list:
-        """Generate a list with a name of each state.
-
-        Returns:
-            list: name of each state
-        """
-        state_list_name = ["name"] * self.num_states()
-        for i in range(self.num_states()):
-            init_name = self.state_name(i)
-            state_list_name[i] = init_name
-        return state_list_name
     
     def visualize_state_list_name(self) -> list:
         """Generate a list with a name of each state for visualization.
@@ -592,15 +635,15 @@ class TomlReader:
         name_list = [self.visualize_state_name(x) for x in list]
         return name_list
     
-    def reference_state(self) -> int:
-        """Get the numbering of energy reference state.
+    def reference_state(self) -> str:
+        """Get the name of energy reference state.
 
         Returns:
-            int: numbering of  energy reference state
+            str: name of energy reference state
         """
-        for i in range(self.num_states()):
-            if "reference_state" in self.data["state"][str(i)]:
-                return i
+        for state in self.name_to_num:
+            if "reference_state" in self.data["state"][state]:
+                return state
             
     def spin_list(self, spin: int, target: int) -> list:
         list = []
