@@ -11,93 +11,22 @@ from scipy.optimize import curve_fit
 import toml
 import os
 
-def graph_builder(state_list_name: list, state_list_num: list, graph_table_name: list, graph_table_num: list) -> list[tuple]:
-    """A tool to build graph represents the reaction relations.
+def product_ratio(spacing: int, conc: np.ndarray, product_list_name_vis: list[str], product_list_num: list[int]) -> None:
+    """Calculate the product ratio and store in dictionary to generate TOML file.
 
     Args:
-        state_list_name (list): list of name of each state
-        state_list_num (list): list of numbering of each state
-        graph_table_name (list): list of graph edge tuples that represent the reaction with state names
-        graph_table_num (list): list of graph edge tuples that represent the reaction with state numbering
+        spacing (int): number of timesteps
+        conc (np.ndarray): concentration values as (spacing) x (number of total states) adjacency matrix
+        product_list_name_vis (list[str]): list of visualizing name of products
+        product_list_num (list[int]): list of product numbering
 
     Returns:
-        list: list of tuples that represent graph edges (initial/transition state, transition/final state)
+        dict: dictionary of product ratio values to generate TOML file
     """
-    # Create a graph
-    name_tree = gp.Digraph()
-
-
-    # Add nodes
-    gp_nodes = []
-    for i in range(len(state_list_name)):
-        list = [str(state_list_num[i]), state_list_name[i]]
-        gp_nodes.append(tuple(list))
-    for node, label in gp_nodes:
-        name_tree.node(node, label)
-    print(gp_nodes)
-
-    # Add edges
-    gp_edges = []
-    for init, fin in graph_table_num:
-        list = [str(init), str(fin)]
-        gp_edges.append(tuple(list))
-    for edge in gp_edges:
-        name_tree.edge(*edge)
-    print(gp_edges)
-
-    name_tree.render('example_graph', format='svg', view=True)
-
-def rate_dict(rates: np.ndarray, visualize_state_list_name: list):
-    rate_dict = {}
-    for i in range(len(visualize_state_list_name)):
-        for j in range(len(visualize_state_list_name)):
-            if rates[i][j] != 0:
-                temporary_dict = {}
-                temporary_dict[visualize_state_list_name[j]] = rates[i][j]
-                rate_dict[visualize_state_list_name[i]] = {}
-                rate_dict[visualize_state_list_name[i]] = temporary_dict
-                print(visualize_state_list_name[i], visualize_state_list_name[j], f"{rates[i][j]:.2e}")
-    return rate_dict
-
-
-def product_fraction(spacing: int, time: np.ndarray, x_axis: np.ndarray, conc: np.ndarray, product_list_name: list[str], product_list_num: list[int]) -> None:
-    """A tool to plot fraction of products.
-
-    Args:
-        spacing (int): spacing of time
-        time (np.ndarray): time
-        conc (np.ndarray): concentration of corresponding time
-        product_list_name (list[str]): list of the name of the products
-        product_list_num (list[int]): list of the numbering of the products
-    """
-    
-    number_of_products = len(product_list_num)
-    dim = (spacing, number_of_products)  # [spacing, number of products]
-
-    fractions = np.zeros(dim)  # [TAB, CAB]
-
-    for i in range(1, spacing):
-        denominator = 0
-        for x in product_list_num:
-            denominator += conc[i][x]
-        for j in range(number_of_products):
-            state = product_list_num[j]
-            fractions[i][j] = conc[i][state] / denominator
-
-    plt.plot(x_axis, fractions)
-    plt.legend(product_list_name, fontsize = 18)
-    plt.xlabel("time (s)", fontsize = 25)
-    plt.ylabel("Concentration fraction", fontsize = 25)
-    plt.xticks(fontsize=15)
-    plt.yticks(fontsize=15)
-    for i in range(len(product_list_num)):
-        print(str(product_list_name[i]), "{:.0f}".format(fractions[spacing-1][i] * 100)+"%")
-
-def product_ratio(spacing: int, conc: np.ndarray, product_list_name: list[str], product_list_num: list[int]) -> None:
     frac_dict = {}
     
-    for i in range(len(product_list_name)):
-        key = product_list_name[i]
+    for i in range(len(product_list_name_vis)):
+        key = product_list_name_vis[i]
         if key in frac_dict.keys():
             frac_dict[key] += conc[spacing-1][product_list_num[i]]
         else:
@@ -112,36 +41,67 @@ def product_ratio(spacing: int, conc: np.ndarray, product_list_name: list[str], 
         frac_dict[key] = item / sum * 100
 
     print(frac_dict)
-    return frac_dict
+    frac_dict_return = {}
+    frac_dict_return["Product ratios %"] = frac_dict
+    return frac_dict_return
 
-def expfitting(time: np.ndarray, x_axis: np.ndarray, spin_list_dict: dict, conc: np.ndarray):
+def expfitting(time: np.ndarray, x_axis: np.ndarray, state_dict: dict, spin_list_dict: dict, conc: np.ndarray) -> dict:
+    """Execute exponential fitting per spin state to calculate time constant.
+    Store values as dictionary to generate TOML file.
+
+    Args:
+        time (np.ndarray): time
+        x_axis (np.ndarray): time in fs format for visualization
+        state_dict (dict): mapping between state name and numbering
+        spin_list_dict (dict): mapping between spin state and corresponding states
+        conc (np.ndarray): starting concentration
+
+    Returns:
+        dict: dictionary of values related to the exponential to generate TOML file
+    """
     def exponential_func(x, a, k, c):
         return a * np.exp(k * x) + c
-    # initial_guess = [-0.3, 10 ** 13, 0]
+    
     x = time
-    y_list = []
+    spacing = len(time)
+    y_list =  np.zeros((spacing, len(spin_list_dict))) # time * label
     y_fit_list = []
-    label_list = []
+    label_list = ["name"] * len(spin_list_dict)
     expfitting_result = {}
 
-    for i in range(len(spin_list_dict)):
-        y = np.zeros(len(time))
-        list = spin_list_dict[i]
-        for j in range(len(time)):
-            for k in list:
-                y[j] += conc[j][k]
-        y_list.append(y)
-        label = "S" + str(i)
+    counter = 0
+
+    for spin_pair in spin_list_dict:
+        if spin_pair[0] == 1:
+            label = "S" + str(spin_pair[1])
+        elif spin_pair[0] == 2:
+            label = "D" + str(spin_pair[1])
+        elif spin_pair[0] == 3:
+            label = "T" + str(spin_pair[1])
+        label_list[counter] = label
         expfitting_result[label] = {}
-        label_list.append(label)
-        plt.scatter(x_axis, y, label = label)
+
+        for state in spin_list_dict[spin_pair]:
+            state_num = state_dict[state]
+            for t in range(len(time)):
+                y_list[t][counter] += conc[t][state_num]
+        counter += 1
+    plt.plot(x_axis, y_list)
+    plt.legend(label_list)
+    plt.xlabel("time [fs]")
+    plt.ylabel("Concentration fraction")
+    plt.show()
+
+    y_transpose = np.transpose(y_list) # label * time
+
+    for i in range(len(spin_list_dict)):
+        y = y_transpose[i]
         try:
             popt, pcov = curve_fit(exponential_func, x, y)
-            # popt, pcov = curve_fit(exponential_func, x, y, p0 = initial_guess, bounds = (0, np.inf))
             a, k, c = popt
-            #print(a, k, c)
-            time_constant = 1 / abs(k) * 10 ** (15)
-            expfitting_result[label]['Time constant'] = time_constant
+            time_constant = 1 / abs(k) * 10 ** (15) #fs
+            label = label_list[i]
+            expfitting_result[label]['Time constant [fs]'] = time_constant
             print("Time constant ", label, " : ", np.round(1 / abs(k) * 10 ** (15), 4), "fs")
             y_fit = exponential_func(x, a, k, c)
             y_fit_list.append(y_fit)
@@ -149,52 +109,58 @@ def expfitting(time: np.ndarray, x_axis: np.ndarray, spin_list_dict: dict, conc:
             print("Optimal parameters not found:", e)
         expfitting_result[label]['Fraction'] = y[len(time)-1]
         print(label, ": ", np.round(y[len(time)-1], 4) * 100, "%")
-        y = np.zeros(len(time))
-
-    plt.legend(fontsize = 18)
-    plt.xlabel("time [fs]", fontsize = 25)
-    plt.ylabel("Concentration fraction", fontsize = 25)
-    plt.xticks(fontsize=15)
-    plt.yticks(fontsize=15)
-
-    plt.show()
-
+        
     y_fit_transpose = np.transpose(np.array(y_fit_list))
     
-    for y in y_list:
-        plt.scatter(x_axis, y)
+    plt.plot(x_axis, y_list)
     plt.plot(x_axis, y_fit_transpose)
-    plt.legend(label_list, fontsize = 18)
-    plt.xlabel("time [fs]", fontsize = 25)
-    plt.ylabel("Concentration fraction", fontsize = 25)
-    plt.xticks(fontsize=15)
-    plt.yticks(fontsize=15)
+    plt.legend(label_list)
+    plt.xlabel("time [fs]")
+    plt.ylabel("Concentration fraction")
     plt.show()    
 
+    expfitting_return = {}
+    expfitting_return["Exponential fitting values"] = expfitting_result
+    return expfitting_return
     print(expfitting_result)
 
-def toml_update(toml_file, frac_list: dict, expfitting_result: dict, dict_rate: dict) -> None:
+def dict_generator(visualize_state_list_name: list[str], state_list_energy: np.ndarray, table_name: list[tuple], dEs: np.ndarray, rates: np.ndarray) -> dict:
+    """Store numerical values of states and reactions (e.g. energies and rate constants) in dictionary format to generate TOML file.
 
-    current_dir = os.path.dirname(os.path.abspath(__file__))
+    Args:
+        visualize_state_list_name (list[str]): visualizing name of each state in a list
+        state_list_energy (np.ndarray): energy (J/mol) per each state
+        table_name (list[tuple]): reaction connection tuples with visualizing name
+        dEs (np.ndarray): energy differences of the reaction as N x N matrix (initial -> final, dEs[init][fin] = energy difference)
+        rates (np.ndarray): reaction rates as N x N adjacency matrix. N: number of states. (initial -> final, rates[init][fin] = rate constant)
+    Returns:
+        dict: dictionary of values to generate TOML file
+    """
+    value_dict = {}
+    value_dict["relative energy (J/mol)"] = {}
+    value_dict["Reactions"] = {}
+    for i in range(len(visualize_state_list_name)):
+        state = visualize_state_list_name[i]
+        value_dict["relative energy (J/mol)"][state] = state_list_energy[i]
 
-    toml_file_path = os.path.join(current_dir, '..', toml_file)
-    
-    with open(toml_file_path, 'r') as f:
-        config = toml.load(f)
-    
-    if 'Rates' not in config:
-        config['Rates']= {}
+    for reaction in table_name:
+        init, fin = reaction
+        init_num, fin_num = visualize_state_list_name.index(init), visualize_state_list_name.index(fin)
+        value_dict["Reactions"][init] = {}
+        value_dict["Reactions"][init][fin] = {}
+        value_dict["Reactions"][init][fin]["dE (J/mol)"] = dEs[init_num][fin_num]
+        value_dict["Reactions"][init][fin]["rate constant"] = rates[init_num][fin_num]
+    return value_dict
 
-    config['Rates'] = dict_rate
+def toml_generator(value_dict: dict, exp_dict: dict, frac_dict: dict) -> None:
+    """ Generate TOML file by merging the dictionaries.
 
-    if 'Exponential fitting' not in config:
-        config['Exponential fitting'] = {}
-    
-    config['Exponential fitting'] = expfitting_result
-    
-    if 'Product ratio' not in config:
-        config['Product ratio'] = {}
-    config['Product ratio'] = frac_list
+    Args:
+        value_dict (dict): values of states and reactions as dictionary
+        exp_dict (dict): values from exponential fitting as dictionary
+        frac_dict (dict): product fraction values as dictionary
+    """
+    data = {**value_dict, **exp_dict, **frac_dict}
 
-    with open(toml_file_path, 'w') as f:
-        toml.dump(config, f)
+    with open('phokimo.toml', 'w') as toml_file:
+        toml.dump(data, toml_file)

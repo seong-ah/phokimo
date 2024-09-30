@@ -35,8 +35,8 @@ def construct_ode(concentration: np.ndarray, t: np.ndarray, table: list[tuple], 
     Args:
         concentration (np.ndarray): starting concentration
         t (np.ndarray): time
-        table (list): table with information of possible reaction
-        rates (np.ndarray): reaction rates as N x N adjacency matrix. N: number of structures.
+        table (list[tuple]): table with information of elementary reactions
+        rates (np.ndarray): reaction rates as N x N adjacency matrix. N: number of states.
 
     Returns:
         tuple: concentration profile for ODEs.

@@ -42,12 +42,14 @@ class TomlReader:
         self.reactant_names = self.reactant_list_name()
         self.reactant_nums = self.reactant_list_num()
         self.product_names = self.product_list_name()
+        self.product_names_vis = self.visualize_product_list_name()
         self.product_nums = self.product_list_num()
 
         self.spins = self.spin_list()
         self.spin_dict = self.spin_list_dict()
 
         self.reactions_name = self.reaction_list_name()
+        self.reactions_vis = self.reaction_list_visualize_name()
         self.reactions_num = self.reaction_list_num()
 
         self.teq_graph = self.graph_teq_group()
@@ -162,7 +164,7 @@ class TomlReader:
         """Generate number label of each state as dictionary format.
 
         Returns:
-            dict: dictionary that connects state name and number label
+            dict: dictionary that maps state name and number label
         """
         name_num_dict = {}
 
@@ -553,6 +555,21 @@ class TomlReader:
                     reaction_list.append(edge)
         return reaction_list
 
+    def reaction_list_visualize_name(self) -> list[tuple]:
+        """Generate a list of reaction linkage with name for visualization.
+
+        linkage of init(int) -> final(int), ignoring transition state
+
+        Returns:
+            list: list of tuples of initial state(str) and final state(str) (initial, final)
+        """
+        reaction_list_vis = []
+        for edge in self.reactions_name:
+            init, fin = edge
+            num_edge = (self.visualize_state_name(init), self.visualize_state_name(fin))
+            reaction_list_vis.append(num_edge)
+        return reaction_list_vis
+
     def reaction_list_num(self) -> list[tuple]:
         """Generate a list of reaction linkage with numbering.
 
@@ -676,6 +693,19 @@ class TomlReader:
         for state in self.name_to_num:
             if self._condition(state) == "product":
                 product_list_name.append(state)
+        return product_list_name
+
+    def visualize_product_list_name(self) -> list[str]:
+        """Generate a list of visualization name of the products.
+
+        Returns:
+            list[int]: list of the visualization name of the products
+        """
+        product_list_name = []
+        for state in self.name_to_num:
+            if self._condition(state) == "product":
+                product_name = self.visualize_state_name(state)
+                product_list_name.append(product_name)
         return product_list_name
 
     def product_list_num(self) -> list[int]:

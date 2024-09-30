@@ -42,13 +42,11 @@ class State_Values:
             if not ground:
                 energy_tuple = terachem.ci_energy(max_roots)
                 energy_value = (energy_tuple[0][target_spin_state[0]] + energy_tuple[0][target_spin_state[1]]) / 2
-                print(ground, file_path, energy_value)
             else:
                 with open(file_path, 'r') as file:
                     for line in file:
                         if "FINAL ENERGY:" in line:
                             energy_value = float(line.split()[2])
-                            print(ground, file_path, energy_value)
                             break
 
         elif substate_name == None:
@@ -74,10 +72,7 @@ class State_Values:
                     for line in file:
                         if "FINAL ENERGY:" in line:
                             energy_value = float(line.split()[2])
-                            print(state, file_path, energy_value)
                             break
-        if self.toml.reference_state() == state:
-            print("referencecheck", ground, energy_value)
         return energy_value
 
     def state_relative_list_hartree(self) -> np.ndarray:
@@ -100,13 +95,10 @@ class State_Values:
                         hartree_energy += self.terachem_output(state, substate_name = substate)
                 else:
                     hartree_energy = self.terachem_output(state)
-                print(self.toml.visualize_state_list_name()[self.toml.state_num(state)], hartree_energy)
                 if self.toml.theory_level(state) == "excited":
                     reference_energy = self.terachem_output(reference_state)
-                    print("reference", state, reference_energy)
                 else:
                     reference_energy = self.terachem_output(reference_state, ground = True)
-                    print("reference", state, reference_energy)
                 state_relative_list_energy[state_num] = hartree_energy - reference_energy
         return state_relative_list_energy
 
@@ -161,7 +153,7 @@ class Reactions:
 
                 if self.toml.final_existence(init, next):
                     final_num = self.toml.final_num(init, next)
-                    if self.toml.reaction_type(init, next) == "relaxation":
+                    if self.toml.reaction_type(init, next) == "vibrational relaxation":
                         dE = state_list_energy[final_num] - state_list_energy[init_num]
                         dEs[init_num][final_num] = dE
         return dEs
@@ -207,17 +199,21 @@ class Reactions:
         reactants = self.toml.reactant_list_name()
 
         dEs = self.dEs(state_list_energy)
+        print("des")
+        print(dEs)
 
         total_atoms = float(self.toml.total_atoms())
         
         for reactant in reactants:
+            print(graph_teq_group)
             graph_teq_reactant = graph_teq_group[reactant]
+            print(graph_teq_reactant)
             for init in self.toml.name_to_num:
                 init_num = self.toml.state_num(init)
                 for next in self.toml.name_to_num:
                     next_num = self.toml.state_num(next)
                     if init == reactant:
-                        if self.toml.reaction_type(init, next) == "relaxation":
+                        if self.toml.reaction_type(init, next) == "vibrational relaxation":
                             normal_mode = self.toml.normal_mode(init, next)
                             rate_constant = self.rate_constant.relaxation_theory.compute_rate(dEs[init_num][next_num], normal_mode, total_atoms, T = 300)
                             rates[init_num][next_num] = rate_constant
@@ -226,10 +222,12 @@ class Reactions:
                             T_eq = self.T_eq(state_list_energy, reactant, temp_state)
                             if (init, next) in graph_teq_reactant.get(temp_state, []):
                                 if self.toml.reaction_type(init, next) == "transition":
+                                    print("transition", init, next, T_eq)
                                     rate_constant = self.rate_constant.reaction_theory.compute_rate(dEs[init_num][next_num], T = T_eq)
                                     rates[init_num][next_num] = rate_constant
-                                elif self.toml.reaction_type(init, next) == "relaxation":
+                                elif self.toml.reaction_type(init, next) == "vibrational relaxation":
                                     normal_mode = self.toml.normal_mode(init, next)
+                                    print("relax", init, next, T_eq, normal_mode)
                                     rate_constant = self.rate_constant.relaxation_theory.compute_rate(dEs[init_num][next_num], normal_mode, total_atoms, T = T_eq)
                                     rates[init_num][next_num] = rate_constant
         return rates

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import os
+import sys
 import numpy as np
 import graphviz as gp
 from phokimo.src.toml_reader import TomlReader
@@ -18,31 +19,30 @@ def remove_duplicates(lst):
     return new_list
 
 def graph_builder():
-    """A tool to build graph represents the reaction relations.
-
-    Args:
-        state_list_name (list): list of name of each state
-        state_list_num (list): list of numbering of each state
-        graph_table_num (list): list of graph edge tuples that represent the reaction with state numbering
+    """A tool to build graph diagram that represents the reaction mechanism.
 
     Returns:
         list: list of tuples that represent graph edges (initial/transition state, transition/final state)
     """
 
-    # Get the directory of the currently executing Python script
+    # INPUT
+    if len(sys.argv) < 2:
+        print("Usage: python3 -m __main__.py <name_of_toml_file>")
+        sys.exit(1)
+
+    toml_file = sys.argv[1]  # Get the TOML file from the command line
     current_dir = os.path.dirname(os.path.abspath(__file__))
 
-    # Assume the TOML file is in the same directory as the Python script
-    # Modify "s1_dynamics.toml" for suitable set-up toml file
-    toml_relative_file_path = os.path.join(current_dir, "..", "ethylene_s1_dynamics.toml")
-    toml_file_path = os.path.abspath(toml_relative_file_path)
+    # Assume the TOML file is in the same directory as the __main__.py
+    # Modify toml_file_path for suitable set-up toml file
+    toml_file_path = os.path.join(current_dir, toml_file)
 
     toml_data = TomlReader(toml_file_path)
 
     state_list_name = toml_data.visualize_state_list_name()
     state_list_num = toml_data.state_list_num()
     graph_table_num = remove_duplicates(toml_data.graph_table_num())
-    reactant_num = toml_data.reactant_num()
+    reactant_nums = toml_data.reactant_nums()
     product_list_num = toml_data.product_list_num()
 
     # Create a graph
@@ -74,7 +74,7 @@ def graph_builder():
 
 
     for node, label in new_nodes:
-        if int(node) == reactant_num:
+        if int(node) in reactant_nums:
             name_tree.node(node, label, shape = 'box', style = 'filled', fillcolor = 'slategray1')
         elif int(node) in product_list_num:
             name_tree.node(node, label, shape = 'box', style = 'filled', fillcolor = 'lavender' )
@@ -82,6 +82,6 @@ def graph_builder():
             name_tree.node(node, label, shape = 'box', style = 'filled', fillcolor = 'lightyellow')
     print(gp_nodes)
 
-    name_tree.render('example_graph', format='svg', view=True)
+    name_tree.render('example_graph', format='png', view=True)
 
 graph_builder()
