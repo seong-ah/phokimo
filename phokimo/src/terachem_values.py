@@ -13,120 +13,114 @@ class State_Values:
     def __init__(self, toml) -> None:
         """Extract data from terachem output based on the kinetic model.
 
-        Reads given toml file for the kinetic modeling and get data from terachem based on it.
+        Reads given toml file for the kinetic modeling and extract energy values from terachem outputs.
 
         Args:
             toml: TomlReader(toml_file_path) that reads toml file
         """
         self.toml = toml
+        self.hartree_array = self.state_relative_list_hartree()
+        self.jmol_array = self.state_relative_list_energy()
 
-    def terachem_output(self, num: int, calculation_path: str, max_roots: int = 5, substate: bool = False, dft: bool = False) -> float:
-        """Get the energy and oscillation strength from terachem output.
+    def terachem_output(self, state: str, max_roots: int = 5, substate_name: str = None, ground: bool = False) -> float:
+        """Get the energy value of target state.
 
         Args:
-            num (int): numbering of the searching state
-            calculation_path (str): absolute path of calculation directory
+            state (str): name of the searching state
             max_roots (int, optional): Number of roots to extract from. Defaults to 5.
+            substate_name (str): default setting is None, name if targeting substate exists
+            ground (bool): default setting is excited, True when theory level is ground state calculation
 
         Returns:
-            tuple: energies (Eh) and oscillator strengths (-)
+            float: energy (Eh)
         """
-        file_path = self.toml.file_path(num, substate, dft)
-        assert os.path.exists(file_path)
-        terachem = TeraChemOutputReader(file_path)
-        target_spin_state = self.toml.target_spin_state(num, substate)
-        if self.toml.theory_level(num, substate) == "dft" or dft == True:
-            with open(file_path, 'r') as file:
-                for line in file:
-                    if "FINAL ENERGY:" in line:
-                        energy_value = float(line.split()[2])
-                        break
+        file_paths = self.toml.file_path
+        target_spin_state = self.toml.target_spin_state(state)
+        if self.toml.reference_state() == state:
+            file_path = self.toml.ref_file_path(ground)
+            terachem = TeraChemOutputReader(file_path)
+            if not ground:
+                energy_tuple = terachem.ci_energy(max_roots)
+                energy_value = (energy_tuple[0][target_spin_state[0]] + energy_tuple[0][target_spin_state[1]]) / 2
+                print(ground, file_path, energy_value)
+            else:
+                with open(file_path, 'r') as file:
+                    for line in file:
+                        if "FINAL ENERGY:" in line:
+                            energy_value = float(line.split()[2])
+                            print(ground, file_path, energy_value)
+                            break
+
+        elif substate_name == None:
+            file_path = file_paths[state]
+            terachem = TeraChemOutputReader(file_path)
+            if self.toml.theory_level(state) == "excited":
+                energy_tuple = terachem.ci_energy(max_roots)
+                energy_value = (energy_tuple[0][target_spin_state[0]] + energy_tuple[0][target_spin_state[1]]) / 2
+            else:
+                with open(file_path, 'r') as file:
+                    for line in file:
+                        if "FINAL ENERGY:" in line:
+                            energy_value = float(line.split()[2])
+                            break
         else:
-            energy_tuple = terachem.ci_energy(max_roots)
-            energy_value = (energy_tuple[0][target_spin_state[0]] + energy_tuple[0][target_spin_state[1]]) / 2
+            file_path = file_paths[state][substate_name]
+            terachem = TeraChemOutputReader(file_path)
+            if self.toml.theory_level(substate_name, substate = True) == "excited":
+                energy_tuple = terachem.ci_energy(max_roots)
+                energy_value = (energy_tuple[0][target_spin_state[0]] + energy_tuple[0][target_spin_state[1]]) / 2
+            else:
+                with open(file_path, 'r') as file:
+                    for line in file:
+                        if "FINAL ENERGY:" in line:
+                            energy_value = float(line.split()[2])
+                            print(state, file_path, energy_value)
+                            break
+        if self.toml.reference_state() == state:
+            print("referencecheck", ground, energy_value)
         return energy_value
 
-    def state_list_hartree(self, calculation_path: str) -> np.ndarray:
-        """Generate a list with a hartree energy(Eh) of each state.
-
-        Args:
-            calculation_path (str): absolute path of calculation directory
+    def state_relative_list_hartree(self) -> np.ndarray:
+        """Generate an array of relative energies.
 
         Returns:
-            list: energy(Eh) of each state
+            np.ndarray: array of energies relative to reference state (Eh)
         """
-        state_list_hartree = np.zeros(self.toml.num_states())
-        for i in range(self.toml.num_states()):
-            hartree_energy = 0.0
-            if i == self.toml.reference_state():
-                hartree_energy = (self.terachem_output(i, calculation_path)[0][self.toml.target_spin_state(i)[0]] + self.terachem_output(i, calculation_path)[0][self.toml.target_spin_state(i)[1]]) / 2
-            elif self.toml.substate_existence(i):
-                for j in self.toml.substate_list(i):
-                    if self.toml.theory_level(i) == "hhtda":
-                        (self.terachem_output(i, calculation_path, substate = True)[0][self.toml.target_spin_state(i)[0]] + self.terachem_output(i, calculation_path, substate = True)[0][self.toml.target_spin_state(i)[1]]) / 2
-                    else:
-                        hartree_energy += self.terachem_output(j, calculation_path, substate = True, hhtda = False)
-            else:
-                if hhtda == True and self.toml.mult(i) != 2:
-                    hartree_energy = (self.terachem_output(i, calculation_path)[0][self.toml.target_spin_state(i)[0]] + self.terachem_output(i, calculation_path)[0][self.toml.target_spin_state(i)[1]]) / 2
-                else:
-                    hartree_energy = self.terachem_output(i, calculation_path, hhtda = False)
-            state_list_hartree[i] = hartree_energy
-        return state_list_hartree
-    
-    # remove raw energy list, directly to relative energy calculation because reference states keep change
-    
-    def state_relative_list_hartree(self, calculation_path: str) -> np.ndarray:
-        num_states = self.toml.num_states()
-        reference_state = self.toml.reference_state()
+        num_states = self.toml.len_states
+        reference_state = self.toml.ref_name
         state_relative_list_energy = np.zeros(num_states)
-        for i in range(num_states):
+        for state in self.toml.name_to_num:
+            state_num = self.toml.state_num(state)
             hartree_energy = 0.0
-            if i == reference_state:
-                state_relative_list_energy[i] = 0.0
+            if state == reference_state:
+                state_relative_list_energy[state_num] = 0.0
             else:
-                if self.toml.substate_existence(i):
-                    for j in self.toml.substate_list(i):
-                        hartree_energy += self.terachem_output(j, calculation_path, substate = True)
+                if self.toml.substate_existence(state):
+                    for substate in self.toml.substate_list(state):
+                        hartree_energy += self.terachem_output(state, substate_name = substate)
                 else:
-                    hartree_energy = self.terachem_output(i, calculation_path)
-                if self.toml.theory_level(i) == "hhtda":
-                    reference_energy = self.terachem_output(reference_state, calculation_path)
+                    hartree_energy = self.terachem_output(state)
+                print(self.toml.visualize_state_list_name()[self.toml.state_num(state)], hartree_energy)
+                if self.toml.theory_level(state) == "excited":
+                    reference_energy = self.terachem_output(reference_state)
+                    print("reference", state, reference_energy)
                 else:
-                    reference_energy = self.terachem_output(reference_state, calculation_path, dft = True)
-                state_relative_list_energy[i] = hartree_energy - reference_energy
-        return np.asarray(state_relative_list_energy)
+                    reference_energy = self.terachem_output(reference_state, ground = True)
+                    print("reference", state, reference_energy)
+                state_relative_list_energy[state_num] = hartree_energy - reference_energy
+        return state_relative_list_energy
 
-    def state_list_energy(self, calculation_path: str) -> np.ndarray:
-        """Generate a list with a energy(J/mol) of each state.
+    def state_relative_list_energy(self) -> np.ndarray:
+        """Converts unit to J/mol from relative energies in an array.
 
         Returns:
-            list: energy(J/mol) of each state
+            np.ndarray: array of energies relative to reference state (J/mol)
         """
-        state_list_energy = energy_unit(self.state_relative_list_hartree(calculation_path), "eh", "j/mol")
+        state_list_energy = energy_unit(self.hartree_array, "eh", "j/mol")
         return state_list_energy
 
-    def oscilstr(self, calculation_path: str) -> list[tuple]:
-        """Generate a list with an oscillation strength of each state.
-
-        Oscillation strength only appears for excited states, so would be zero for the ground state.
-
-        Args:
-            calculation_path (str): absolute path of calculation directory
-
-        Returns:
-            list: oscillation strength for each state
-        """
-        state_list_oscil = np.zeros(self.num_states)
-        for i in range(self.num_states):
-            if self.toml.target_spin_state(i)[0] != 0:
-                oscilstr = self.terachem_output(i, calculation_path)[1][self.toml.target_spin_state(i)[0] - 1]
-                state_list_oscil[i] = oscilstr
-        return state_list_oscil
-
-
 class Reactions:
-    def __init__(self, toml, rate_constant):
+    def __init__(self, toml, rate_constant, state_list_energy: np.ndarray):
         """Figure out reaction connection and calculate rate constant.
 
         Use toml data for reaction and terachem output to calculate rate constants.
@@ -134,49 +128,67 @@ class Reactions:
         Args:
             toml: TomlReader(toml_file_path) that reads toml file
             rate_constant: RateCalculator() that calculates rate constants
+            state_list_energy (np.ndarray): relative energy(J/mol) of each state
         """
         self.toml = toml
         self.rate_constant = rate_constant
 
+        self.energy_differences = self.dEs(state_list_energy)
     
-    def dEs(self, state_list_energy: list) -> np.ndarray:
+    def dEs(self, state_list_energy: np.ndarray) -> np.ndarray:
         """Calculate the energy differences of each reaction.
 
-        dEs[initial_state][final_state] = final energy - initial energy (for reactions with transition state, excitation energy)
+        dEs[initial_state][final_state] = final energy - initial energy
+        if reaction has transition state, dEs[initial_state][final_state] = excitation energy = transition state energy - initial energy
 
         Args:
-            state_list_energy (list): energy(J/mol) of each state
+            state_list_energy (np.ndarray): relative energy(J/mol) of each state
 
         Returns:
-            np.ndarray: rate constants
+            np.ndarray: rate constant values in matrix form (k = dEs[initial state][final state])
         """
-        dim = (self.toml.num_states(), self.toml.num_states())
+        dim = (self.toml.len_states, self.toml.len_states)
         dEs = np.zeros(dim)
         
-        for i in range(self.toml.num_states()):
-            init_num = self.toml.state_num(i)
-            for j in range(self.toml.num_states()):
-                if self.toml.ts_existence(i, j):
-                    ts_num = self.toml.ts_num(i, j)
-                    ts_final_num = self.toml.ts_final_num(i, j)
+        for init in self.toml.name_to_num:
+            init_num = self.toml.state_num(init)
+            for next in self.toml.name_to_num:
+                if self.toml.ts_existence(init, next):
+                    ts_num = self.toml.ts_num(init, next)
+                    ts_final_num = self.toml.ts_final_num(init, next)
                     dE = state_list_energy[ts_num] - state_list_energy[init_num]
                     dEs[init_num][ts_final_num] = dE
 
-                if self.toml.final_existence(i, j):
-                    final_num = self.toml.final_num(i, j)
-                    if self.toml.reaction_type(init_num, final_num) == "relaxation":
+                if self.toml.final_existence(init, next):
+                    final_num = self.toml.final_num(init, next)
+                    if self.toml.reaction_type(init, next) == "relaxation":
                         dE = state_list_energy[final_num] - state_list_energy[init_num]
                         dEs[init_num][final_num] = dE
         return dEs
     
-    def T_eq(self, state_list_energy: list, i: int):
+    def T_eq(self, state_list_energy: list, reactant: str, temp_state: str) -> float:
+        """Calculate the equilibriated temperature of the reaction.
+
+        .. math::
+            T_{\text{eq}} = T_{\text{neq}} + \frac{n \Delta \epsilon}{(3N - 6) R}
+            T_{\text{neq}} = 300K
+
+
+        Args:
+            state_list_energy (np.ndarray): relative energy(J/mol) of each state
+            reactant (str): corresponding reactant of the reaction
+            temp_state (str) : corresponding subsequent state from the reactant that defines :sub:`T_{eq}`
+
+        Returns:
+            np.ndarray: rate constant values in matrix form (k = dEs[initial state][final state])
+        """
         R_GAS = constants.R
 
-        graph_group = self.toml.graph_group()
-        reactant = self.toml.reactant_num()
         total_atoms = self.toml.total_atoms()
+        reactant_num = self.toml.state_num(reactant)
+        temp_state_num = self.toml.state_num(temp_state)
 
-        return 300 + (state_list_energy[reactant] - state_list_energy[i]) / ((3 * total_atoms - 6) * R_GAS)
+        return 300 + (state_list_energy[reactant_num] - state_list_energy[temp_state_num]) / ((3 * total_atoms - 6) * R_GAS)
 
     def rates(self, state_list_energy: list) -> np.ndarray:
         """Calculate the rate constants of each reaction.
@@ -188,35 +200,36 @@ class Reactions:
             np.ndarray: rate constants
         """
         
-        graph_temp_group = self.toml.graph_temp_group()
-        graph_group = self.toml.graph_group()
-        dim = (self.toml.num_states(), self.toml.num_states())
+        graph_teq_group = self.toml.teq_graph
+        dim = (self.toml.len_states, self.toml.len_states)
         rates = np.zeros(dim)
         
-        reactant = self.toml.reactant_num()
+        reactants = self.toml.reactant_list_name()
 
-        reaction_types = self.toml.reaction_types()
         dEs = self.dEs(state_list_energy)
 
         total_atoms = float(self.toml.total_atoms())
-        normal_modes = 1.0  # Should be extended later for each reaction
         
-        for i in range(self.toml.num_states()):
-            for j in range(self.toml.num_states()):
-                if i == reactant:
-                    if reaction_types[i][j] == 2:
-                        rate_constant = self.rate_constant.relaxation_theory.compute_rate(dEs[i][j], normal_modes, total_atoms, T = 300)
-                        rates[i][j] = rate_constant
-                else:
-                    for key in graph_temp_group:
-                        T_eq = self.T_eq(state_list_energy, key)
-                        if (i, j) in graph_temp_group.get(key, []):
-                            if reaction_types[i][j] == 1:
-                                rate_constant = self.rate_constant.reaction_theory.compute_rate(dEs[i][j], T = T_eq)
-                                rates[i][j] = 2 * rate_constant
-                            elif reaction_types[i][j] == 2:
-                                print(key, T_eq, i, j)
-                                print(dEs[i][j], normal_modes, total_atoms)
-                                rate_constant = self.rate_constant.relaxation_theory.compute_rate(dEs[i][j], normal_modes, total_atoms, T = T_eq)
-                                rates[i][j] = rate_constant
+        for reactant in reactants:
+            graph_teq_reactant = graph_teq_group[reactant]
+            for init in self.toml.name_to_num:
+                init_num = self.toml.state_num(init)
+                for next in self.toml.name_to_num:
+                    next_num = self.toml.state_num(next)
+                    if init == reactant:
+                        if self.toml.reaction_type(init, next) == "relaxation":
+                            normal_mode = self.toml.normal_mode(init, next)
+                            rate_constant = self.rate_constant.relaxation_theory.compute_rate(dEs[init_num][next_num], normal_mode, total_atoms, T = 300)
+                            rates[init_num][next_num] = rate_constant
+                    else:
+                        for temp_state in graph_teq_reactant:
+                            T_eq = self.T_eq(state_list_energy, reactant, temp_state)
+                            if (init, next) in graph_teq_reactant.get(temp_state, []):
+                                if self.toml.reaction_type(init, next) == "transition":
+                                    rate_constant = self.rate_constant.reaction_theory.compute_rate(dEs[init_num][next_num], T = T_eq)
+                                    rates[init_num][next_num] = rate_constant
+                                elif self.toml.reaction_type(init, next) == "relaxation":
+                                    normal_mode = self.toml.normal_mode(init, next)
+                                    rate_constant = self.rate_constant.relaxation_theory.compute_rate(dEs[init_num][next_num], normal_mode, total_atoms, T = T_eq)
+                                    rates[init_num][next_num] = rate_constant
         return rates

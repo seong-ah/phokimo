@@ -3,12 +3,12 @@
 from __future__ import annotations
 
 import os
+import sys
 from functools import partial
 
 import matplotlib.pyplot as plt
 import numpy as np
 from scipy.integrate import odeint
-import toml
 
 from phokimo.src.additional_functions import product_fraction, graph_builder, expfitting, product_ratio, rate_dict, toml_update
 from phokimo.src.ode_builder import construct_ode
@@ -17,14 +17,16 @@ from phokimo.src.terachem_values import Reactions, State_Values
 from phokimo.src.toml_reader import TomlReader
 from tcgm_lib.convert.converter import energy_unit
 
-
 def main() -> None:
     """Run the application."""
     """ Read data from toml file. """
 
-    toml_file = "ethylene_s1_dynamics.toml"
+    # INPUT
+    if len(sys.argv) < 2:
+        print("Usage: python3 __main__.py <name_of_toml_file>")
+        sys.exit(1)
 
-    # Get the directory of the currently executing Python script
+    toml_file = sys.argv[1]  # Get the TOML file from the command line
     current_dir = os.path.dirname(os.path.abspath(__file__))
 
     # Assume the TOML file is in the same directory as the __main__.py
@@ -39,15 +41,16 @@ def main() -> None:
     num_states = toml_data.num_states()
 
     visualize_state_list_name = toml_data.visualize_state_list_name()
-    start_conc = toml_data.start_conc()
-
-    rate_formula = RateCalculator()
-    reactions = Reactions(toml_data, rate_formula)
+    start_conc = toml_data.initial_conc()
 
     state_data = State_Values(toml_data)
-    state_list_energy = state_data.state_list_energy(calculation_path)
+    state_list_energy = state_data.state_relative_list_energy()
 
-    graph_group = toml_data.graph_group()
+
+    rate_formula = RateCalculator()
+    reactions = Reactions(toml_data, rate_formula, state_list_energy)
+
+    graph_group = toml_data.graph_teq_group()
     print("graph group", graph_group)
 
     # state_list_energy[10] = 385600.0
@@ -55,10 +58,8 @@ def main() -> None:
 
     # rates = reactions.rates(state_list_energy)
 
-    spin_list_dict = toml_data.spin_list_dict(1)
-    reference_state = toml_data.reference_state()
-    reactant_name = toml_data.reactant_name()
-    reactant_num = toml_data.reactant_num()
+    spin_list_dict = toml_data.spin_list_dict()
+
     product_list_name = toml_data.product_list_name()
     product_list_num = toml_data.product_list_num()
 
@@ -75,11 +76,7 @@ def main() -> None:
 
     """ Plot Energies(eV) """
     
-    relative_energy_numpy = np.asarray(state_list_energy)
-    relative_energy_ev = energy_unit(relative_energy_numpy, "j/mol", "ev") # Relative energy in eV
-    # relative_energy_ev_zpe = [a + b for a, b in zip(relative_energy_ev, zpe)]
-    # relative_relative_energy_ev_zpe = np.asarray([x - relative_energy_ev_zpe[reference_state] for x in relative_energy_ev_zpe])
-    # relative_relative_energy_jmol_zpe = energy_unit(relative_relative_energy_ev_zpe, "ev", "j/mol")
+    relative_energy_ev = energy_unit(state_list_energy, "j/mol", "ev")
     visualize_state_list_ev = [np.round(x, 2) for x in relative_energy_ev]
     print(visualize_state_list_name)
     print(visualize_state_list_ev)
@@ -98,8 +95,8 @@ def main() -> None:
     dict_rate = rate_dict(rates, visualize_state_list_name)
 
     """ Solving ode """
-    table = toml_data.reaction_list()
-    #print(table)
+    table = toml_data.reactions_num
+    print(table)
 
     duration = toml_data.duration()
     spacing = 100000
@@ -133,6 +130,7 @@ def main() -> None:
     plt.xlabel("time [fs]", fontsize = 20)
     plt.ylabel("Concentration", fontsize = 20)
     plt.show()
+    c
     """
 
     expfitting_result = expfitting(time, x_axis, spin_list_dict, conc)
