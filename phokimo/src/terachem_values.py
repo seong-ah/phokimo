@@ -158,7 +158,7 @@ class Reactions:
                         dEs[init_num][final_num] = dE
         return dEs
     
-    def T_eq(self, state_list_energy: list, reactant: str, temp_state: str) -> float:
+    def T_eq(self, state_list_energy: np.ndarray, reactant: str, temp_state: str) -> float:
         """Calculate the equilibriated temperature of the reaction.
 
         .. math::
@@ -182,11 +182,11 @@ class Reactions:
 
         return 300 + (state_list_energy[reactant_num] - state_list_energy[temp_state_num]) / ((3 * total_atoms - 6) * R_GAS)
 
-    def rates(self, state_list_energy: list) -> np.ndarray:
+    def rates(self, state_list_energy: np.ndarray) -> np.ndarray:
         """Calculate the rate constants of each reaction.
 
         Args:
-            state_list_energy (list): energy(J/mol) of each state
+            state_list_energy (np.ndarray): energy(J/mol) of each state
 
         Returns:
             np.ndarray: rate constants
@@ -199,8 +199,6 @@ class Reactions:
         reactants = self.toml.reactant_list_name()
 
         dEs = self.dEs(state_list_energy)
-        print("des")
-        print(dEs)
 
         total_atoms = float(self.toml.total_atoms())
         
@@ -220,11 +218,13 @@ class Reactions:
                     else:
                         for temp_state in graph_teq_reactant:
                             T_eq = self.T_eq(state_list_energy, reactant, temp_state)
-                            if (init, next) in graph_teq_reactant.get(temp_state, []):
-                                if self.toml.reaction_type(init, next) == "transition":
-                                    print("transition", init, next, T_eq)
-                                    rate_constant = self.rate_constant.reaction_theory.compute_rate(dEs[init_num][next_num], T = T_eq)
-                                    rates[init_num][next_num] = rate_constant
+                            if (init, next) in graph_teq_reactant.get(temp_state, []) or self.toml.ts_existence(init, next):
+                                if self.toml.ts_existence(init, next):
+                                    print("transition check", init, next)
+                                    fin = self.toml.ts_final_name(init, next)
+                                    fin_num = self.toml.state_num(fin)
+                                    rate_constant = self.rate_constant.reaction_theory.compute_rate(dEs[init_num][fin_num], T = 329.05)
+                                    rates[init_num][fin_num] = rate_constant
                                 elif self.toml.reaction_type(init, next) == "vibrational relaxation":
                                     normal_mode = self.toml.normal_mode(init, next)
                                     print("relax", init, next, T_eq, normal_mode)

@@ -34,13 +34,11 @@ def product_ratio(spacing: int, conc: np.ndarray, product_list_name_vis: list[st
 
     sum = 0.0
     for item in frac_dict.values():
-        print(item, type(item))
         sum += item
 
     for key, item in frac_dict.items():
         frac_dict[key] = item / sum * 100
 
-    print(frac_dict)
     frac_dict_return = {}
     frac_dict_return["Product ratios %"] = frac_dict
     return frac_dict_return
@@ -90,6 +88,7 @@ def expfitting(time: np.ndarray, x_axis: np.ndarray, state_dict: dict, spin_list
     plt.legend(label_list)
     plt.xlabel("time [fs]")
     plt.ylabel("Concentration fraction")
+    plt.savefig('phokimo_kinetics_spin.png')
     plt.show()
 
     y_transpose = np.transpose(y_list) # label * time
@@ -111,18 +110,20 @@ def expfitting(time: np.ndarray, x_axis: np.ndarray, state_dict: dict, spin_list
         print(label, ": ", np.round(y[len(time)-1], 4) * 100, "%")
         
     y_fit_transpose = np.transpose(np.array(y_fit_list))
+    fit_label_list = [x + '_fit' for x in label_list]
     
-    plt.plot(x_axis, y_list)
-    plt.plot(x_axis, y_fit_transpose)
-    plt.legend(label_list)
+    plt.plot(x_axis, y_list, label = label_list)
+    plt.plot(x_axis, y_fit_transpose, label = fit_label_list)
+    plt.legend()
     plt.xlabel("time [fs]")
     plt.ylabel("Concentration fraction")
+    plt.savefig('phokimo_expfitting.png')
     plt.show()    
 
     expfitting_return = {}
     expfitting_return["Exponential fitting values"] = expfitting_result
     return expfitting_return
-    print(expfitting_result)
+
 
 def dict_generator(visualize_state_list_name: list[str], state_list_energy: np.ndarray, table_name: list[tuple], dEs: np.ndarray, rates: np.ndarray) -> dict:
     """Store numerical values of states and reactions (e.g. energies and rate constants) in dictionary format to generate TOML file.
@@ -146,8 +147,10 @@ def dict_generator(visualize_state_list_name: list[str], state_list_energy: np.n
     for reaction in table_name:
         init, fin = reaction
         init_num, fin_num = visualize_state_list_name.index(init), visualize_state_list_name.index(fin)
-        value_dict["Reactions"][init] = {}
-        value_dict["Reactions"][init][fin] = {}
+        if init not in value_dict["Reactions"]:
+            value_dict["Reactions"][init] = {}
+        if fin not in value_dict["Reactions"][init]:
+            value_dict["Reactions"][init][fin] = {}
         value_dict["Reactions"][init][fin]["dE (J/mol)"] = dEs[init_num][fin_num]
         value_dict["Reactions"][init][fin]["rate constant"] = rates[init_num][fin_num]
     return value_dict

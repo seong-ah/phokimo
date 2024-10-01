@@ -133,21 +133,6 @@ class TomlReader:
             return [spin_state, spin_state]
         else:
             return spin_state
-
-    def state_name(self, state: str, substate: bool = False) -> str:
-        """Extract the state name.
-
-        Args:
-            state (str): name of the searching state
-            substate (bool): default setting is False, True when targeting substate
-
-        Returns:
-            str: state name
-        """
-        if substate == False:
-            return self.data["state"][state]["name"]
-        else:
-            return self.data["substate"][state]["name"]
     
     def visualize_state_name(self, state: str) -> str:
         """Extract the state name for visualization.
@@ -331,7 +316,7 @@ class TomlReader:
             str: name of the final state
         """
         assert self.final_existence(init, fin)
-        return self.state_name(fin)
+        return fin
 
     def final_num(self, init: str, fin: str) -> int:
         """Extract the numbering of the final state of a reaction without transition state (relaxation).
@@ -375,7 +360,7 @@ class TomlReader:
             str: name of the transition state
         """
         assert self.ts_existence(init, ts) 
-        return self.state_name(ts)
+        return ts
 
     def ts_num(self, init: str, ts: str) -> int:
         """Extract the numbering of the transition state.
@@ -405,8 +390,8 @@ class TomlReader:
             int: numbering of the final state of a reaction with transition state
         """
         assert self.ts_existence(init, ts) 
-        final = int(self.data["state"][init]["ts"][ts]["final"])
-        return self.state_name(final)
+        final = self.data["state"][init]["ts"][ts]["final"]
+        return final
 
     def ts_final_num(self, init: str, ts: str) -> int:
         """Extract the numbering of the final state in a reaction with transition state.
@@ -421,7 +406,7 @@ class TomlReader:
             int: numbering of the final state
         """
         assert self.ts_existence(init, ts) 
-        final = int(self.data["state"][init]["ts"][ts]["final"])
+        final = self.ts_final_name(init, ts)
         return self.state_num(final)
 
     def graph_edge(self, init, fin) -> tuple:
@@ -439,8 +424,6 @@ class TomlReader:
 
     def reaction_type(self, init: str, fin: str) -> str:
         """Check the reaction type of the reaction without transition state (relaxation).
-
-        final_existence should be true, otherwise Assertionerror will be raised.
 
         Args:
             init (str): name of the initial state
@@ -584,34 +567,6 @@ class TomlReader:
             num_edge = (self.state_num(init), self.state_num(fin))
             reaction_list_num.append(num_edge)
         return reaction_list_num
-        
-    
-    def reaction_types(self) -> list:
-        """Generate a list of reaction types.
-
-        Each number represents the reaction type of reaction_types[initial_state][final_state]:
-            1: reaction with transition state
-            2: non-radiative relaxation
-            3: radiative emission
-
-        Returns:
-            list: reaction type of corresponding reactions (reaction_types[initial state][final state])
-        """
-        dim = (self.len_states, self.len_states)
-        reaction_types = np.zeros(dim)
-        for i in range(self.len_states):
-            init_num = self.state_num(i)
-            for j in range(self.len_states):
-                if self.ts_existence(i, j):
-                    ts_final_num = self.ts_final_num(i, j)
-                    reaction_types[init_num][ts_final_num] = 1
-                if self.final_existence(i, j):
-                    final_num = self.final_num(i, j)
-                    if self.reaction_type(init_num, final_num) == "relaxation":
-                        reaction_types[init_num][final_num] = 2
-                    if self.reaction_type(init_num, final_num) == "emission":
-                        reaction_types[init_num][final_num] = 3
-        return reaction_types
     
     def graph_table_name(self) -> list[tuple]:
         """Generate a list with reaction connection with state names.

@@ -26,7 +26,7 @@ def main() -> None:
         sys.exit(1)
 
     toml_file = sys.argv[1]
-    current_dir = os.path.dirname(os.path.abspath(__file__))
+    current_dir = os.getcwd()
     toml_file_path = os.path.join(current_dir, toml_file)
     toml_data = TomlReader(toml_file_path)
 
@@ -55,6 +55,7 @@ def main() -> None:
     [plt.text(x, y, str(y), ha="center", va="bottom") for x, y in zip(range(len(visualize_state_list_name)), visualize_state_list_ev)]
     plt.ylabel("rel.energy [eV]")
     plt.tight_layout()
+    plt.savefig('phokimo_state_energy.png')
     plt.show()
 
     """ Solving ode """
@@ -76,6 +77,7 @@ def main() -> None:
     plt.legend(visualize_state_list_name)
     plt.xlabel("time [fs]")
     plt.ylabel("Concentration")
+    plt.savefig('phokimo_kinetics_state.png')
     plt.show()
 
     """ Generate output TOML file """
