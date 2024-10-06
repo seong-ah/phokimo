@@ -51,6 +51,9 @@ class TomlReader:
         self.reactions_name = self.reaction_list_name()
         self.reactions_vis = self.reaction_list_visualize_name()
         self.reactions_num = self.reaction_list_num()
+        
+        self.graph_name = self.graph_table_name()
+        self.graph_num = self.graph_table_num()
 
         self.teq_graph = self.graph_teq_group()
 
@@ -288,7 +291,7 @@ class TomlReader:
                 return self.data["state"][state]["theory_level"]
             
     def final_existence(self, init: str, fin: str) -> bool:
-        """Check the existence of the reaction without transition state (relaxation).
+        """Check the existence of the reaction.
 
         Args:
             init (str): name of the initial state
@@ -304,7 +307,7 @@ class TomlReader:
             return False
 
     def final_name(self, init: str, fin: str) -> str:
-        """Extract the name of the final state of a reaction without transition state (relaxation).
+        """Extract the name of the final state of a reaction.
 
         final_existence should be True, otherwise AssertionError will be raised.
 
@@ -319,7 +322,7 @@ class TomlReader:
         return fin
 
     def final_num(self, init: str, fin: str) -> int:
-        """Extract the numbering of the final state of a reaction without transition state (relaxation).
+        """Extract the numbering of the final state of a reaction.
 
         final_existence should be True, otherwise AssertionError will be raised.
 
@@ -333,81 +336,36 @@ class TomlReader:
         assert self.final_existence(init, fin)
         return self.state_num(fin)
 
-    def ts_existence(self, init: str, ts: str) -> bool:
-        """Check the existence of the reaction with transition state.
-
-        Args:
-            init (str): name of the initial state
-            ts (str): name of the transition state
-
-        Returns:
-            bool: True if exists otherwise False
-        """
-        if "ts" in self.data["state"][init]:
-            if ts in self.data["state"][init]["ts"]:
-                return True
-
-    def ts_name(self, init: str, ts: str) -> str:
+    def ts_name(self, init: str, fin: str) -> str:
         """Extract the name of the transition state.
 
-        ts_existence should be True, otherwise AssertionError will be raised.
+        reaction_type should be transition, otherwise AssertionError will be raised.
 
         Args:
             init (str): name of the initial state
-            ts (str): name of the transition state
+            fin (str): name of the final state
 
         Returns:
             str: name of the transition state
         """
-        assert self.ts_existence(init, ts) 
-        return ts
+        assert self.reaction_type(init, fin) == "transition"
+        return self.data["state"][init]["final"][fin]["ts"]
 
-    def ts_num(self, init: str, ts: str) -> int:
+    def ts_num(self, init: str, fin: str) -> int:
         """Extract the numbering of the transition state.
 
-        ts_existence should be True, otherwise AssertionError will be raised.
+        reaction_type should be transition, otherwise AssertionError will be raised.
 
         Args:
             init (str): name of the initial state
-            ts (str): name of the transition state
+            fin (str): name of the final state
 
         Returns:
             int: numbering of the transition state
         """
-        assert self.ts_existence(init, ts)
+        assert self.reaction_type(init, fin) == "transition"
+        ts = self.ts_name(init, fin)
         return self.state_num(ts)
-
-    def ts_final_name(self, init: str, ts: str) -> str:
-        """Extract the name of the final state of a reaction with transition state.
-
-        ts_existence should be True, otherwise AssertionError will be raised.
-
-        Args:
-            init (str): name of the initial state
-            ts (str): name of the transition state
-
-        Returns:
-            int: numbering of the final state of a reaction with transition state
-        """
-        assert self.ts_existence(init, ts) 
-        final = self.data["state"][init]["ts"][ts]["final"]
-        return final
-
-    def ts_final_num(self, init: str, ts: str) -> int:
-        """Extract the numbering of the final state in a reaction with transition state.
-
-        ts_existence should be True, otherwise AssertionError will be raised.
-
-        Args:
-            init (str): name of the initial state
-            ts (str): name of the transition state
-
-        Returns:
-            int: numbering of the final state
-        """
-        assert self.ts_existence(init, ts) 
-        final = self.ts_final_name(init, ts)
-        return self.state_num(final)
 
     def graph_edge(self, init, fin) -> tuple:
         """Generate edge of the mechanism graph.
@@ -521,20 +479,16 @@ class TomlReader:
     def reaction_list_name(self) -> list[tuple]:
         """Generate a list of reaction linkage.
 
-        linkage of init -> final, ignoring transition state
+        linkage of init -> final, ignoring the transition state
 
         Returns:
             list: list of tuples of initial state(name) and final state(name) (initial, final)
         """
         reaction_list = []
         for init in self.name_to_num:
-            for next in self.name_to_num:
-                if self.ts_existence(init, next):
-                    ts_final_name = self.ts_final_name(init, next)
-                    edge = (init, ts_final_name)
-                    reaction_list.append(edge)
-                if self.final_existence(init, next):
-                    edge = (init, next)
+            for fin in self.name_to_num:
+                if self.final_existence(init, fin):
+                    edge = (init, fin)
                     reaction_list.append(edge)
         return reaction_list
 
@@ -576,15 +530,14 @@ class TomlReader:
         """
         graph_table_name = []
         for init in self.name_to_num:
-            for next in self.name_to_num:
-                if self.ts_existence(init, next):
-                    ts_name = next
-                    ts_final_name = self.ts_final_name(init, next)
-                    graph_table_name.append(self.graph_edge(init, ts_name))
-                    graph_table_name.append(self.graph_edge(ts_name, ts_final_name))
-                if self.final_existence(init, next):
-                    final_name = next
-                    graph_table_name.append(self.graph_edge(init, final_name))
+            for fin in self.name_to_num:
+                if self.final_existence(init, fin):
+                    if self.reaction_type(init, fin) == "transition":
+                        ts = self.ts_name(init, fin)
+                        graph_table_name.append(self.graph_edge(init, ts))
+                        graph_table_name.append(self.graph_edge(ts, fin))
+                    else:
+                        graph_table_name.append(self.graph_edge(init, fin))
         return graph_table_name
 
     def graph_table_num(self) -> list:
@@ -594,17 +547,13 @@ class TomlReader:
             list: graph edge tuples that represent the reaction connections with state numberings
         """
         graph_table_num = []
-        for init in self.name_to_num:
+        graph_table_name = self.graph_name
+
+        for edge in graph_table_name:
+            init, fin = edge
             init_num = self.state_num(init)
-            for next in self.name_to_num:
-                if self.ts_existence(init, next):
-                    ts_num = self.ts_num(init, next)
-                    ts_final_num = self.ts_final_num(init, next)
-                    graph_table_num.append(self.graph_edge(init_num, ts_num))
-                    graph_table_num.append(self.graph_edge(ts_num, ts_final_num))
-                if self.final_existence(init, next):
-                    final_num = self.final_num(init, next)
-                    graph_table_num.append(self.graph_edge(init_num, final_num))
+            fin_num = self.state_num(fin)
+            graph_table_num.append(self.graph_edge(init_num, fin_num))
         return graph_table_num
     
     def _condition(self, state = str) -> str:

@@ -144,16 +144,14 @@ class Reactions:
         
         for init in self.toml.name_to_num:
             init_num = self.toml.state_num(init)
-            for next in self.toml.name_to_num:
-                if self.toml.ts_existence(init, next):
-                    ts_num = self.toml.ts_num(init, next)
-                    ts_final_num = self.toml.ts_final_num(init, next)
-                    dE = state_list_energy[ts_num] - state_list_energy[init_num]
-                    dEs[init_num][ts_final_num] = dE
-
-                if self.toml.final_existence(init, next):
-                    final_num = self.toml.final_num(init, next)
-                    if self.toml.reaction_type(init, next) == "vibrational relaxation":
+            for fin in self.toml.name_to_num:
+                final_num = self.toml.state_num(fin)
+                if self.toml.final_existence(init, fin):
+                    if self.toml.reaction_type(init, fin) == "transition":
+                        ts_num = self.toml.ts_num(init, fin)
+                        dE = state_list_energy[ts_num] - state_list_energy[init_num]
+                        dEs[init_num][final_num] = dE
+                    elif self.toml.reaction_type(init, fin) == "vibrational relaxation":
                         dE = state_list_energy[final_num] - state_list_energy[init_num]
                         dEs[init_num][final_num] = dE
         return dEs
@@ -203,31 +201,25 @@ class Reactions:
         total_atoms = float(self.toml.total_atoms())
         
         for reactant in reactants:
-            print(graph_teq_group)
             graph_teq_reactant = graph_teq_group[reactant]
-            print(graph_teq_reactant)
             for init in self.toml.name_to_num:
                 init_num = self.toml.state_num(init)
-                for next in self.toml.name_to_num:
-                    next_num = self.toml.state_num(next)
+                for fin in self.toml.name_to_num:
+                    final_num = self.toml.state_num(fin)
                     if init == reactant:
-                        if self.toml.reaction_type(init, next) == "vibrational relaxation":
-                            normal_mode = self.toml.normal_mode(init, next)
-                            rate_constant = self.rate_constant.relaxation_theory.compute_rate(dEs[init_num][next_num], normal_mode, total_atoms, T = 300)
-                            rates[init_num][next_num] = rate_constant
+                        if self.toml.reaction_type(init, fin) == "vibrational relaxation":
+                            normal_mode = self.toml.normal_mode(init, fin)
+                            rate_constant = self.rate_constant.relaxation_theory.compute_rate(dEs[init_num][final_num], normal_mode, total_atoms, T = 300)
+                            rates[init_num][final_num] = rate_constant
                     else:
                         for temp_state in graph_teq_reactant:
                             T_eq = self.T_eq(state_list_energy, reactant, temp_state)
-                            if (init, next) in graph_teq_reactant.get(temp_state, []) or self.toml.ts_existence(init, next):
-                                if self.toml.ts_existence(init, next):
-                                    print("transition check", init, next)
-                                    fin = self.toml.ts_final_name(init, next)
-                                    fin_num = self.toml.state_num(fin)
-                                    rate_constant = self.rate_constant.reaction_theory.compute_rate(dEs[init_num][fin_num], T = 329.05)
-                                    rates[init_num][fin_num] = rate_constant
-                                elif self.toml.reaction_type(init, next) == "vibrational relaxation":
-                                    normal_mode = self.toml.normal_mode(init, next)
-                                    print("relax", init, next, T_eq, normal_mode)
-                                    rate_constant = self.rate_constant.relaxation_theory.compute_rate(dEs[init_num][next_num], normal_mode, total_atoms, T = T_eq)
-                                    rates[init_num][next_num] = rate_constant
+                            if (init, fin) in graph_teq_reactant.get(temp_state, []):
+                                if self.toml.reaction_type(init, fin) == "transition":
+                                    rate_constant = self.rate_constant.reaction_theory.compute_rate(dEs[init_num][final_num], T = T_eq)
+                                    rates[init_num][final_num] = rate_constant
+                                elif self.toml.reaction_type(init, fin) == "vibrational relaxation":
+                                    normal_mode = self.toml.normal_mode(init, fin)
+                                    rate_constant = self.rate_constant.relaxation_theory.compute_rate(dEs[init_num][final_num], normal_mode, total_atoms, T = T_eq)
+                                    rates[init_num][final_num] = rate_constant
         return rates

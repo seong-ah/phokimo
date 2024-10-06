@@ -38,6 +38,7 @@ def product_ratio(spacing: int, conc: np.ndarray, product_list_name_vis: list[st
 
     for key, item in frac_dict.items():
         frac_dict[key] = item / sum * 100
+        print("Product ratio: ", key, ": ", frac_dict[key], " %")
 
     frac_dict_return = {}
     frac_dict_return["Product ratios %"] = frac_dict
@@ -88,8 +89,10 @@ def expfitting(time: np.ndarray, x_axis: np.ndarray, state_dict: dict, spin_list
     plt.legend(label_list)
     plt.xlabel("time [fs]")
     plt.ylabel("Concentration fraction")
+    plt.tight_layout()
     plt.savefig('phokimo_kinetics_spin.png')
     plt.show()
+    plt.clf()
 
     y_transpose = np.transpose(y_list) # label * time
 
@@ -117,8 +120,10 @@ def expfitting(time: np.ndarray, x_axis: np.ndarray, state_dict: dict, spin_list
     plt.legend()
     plt.xlabel("time [fs]")
     plt.ylabel("Concentration fraction")
+    plt.tight_layout()
     plt.savefig('phokimo_expfitting.png')
-    plt.show()    
+    plt.show()
+    plt.clf()    
 
     expfitting_return = {}
     expfitting_return["Exponential fitting values"] = expfitting_result

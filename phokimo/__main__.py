@@ -51,12 +51,15 @@ def main() -> None:
     relative_energy_ev = energy_unit(state_list_energy, "j/mol", "ev")
     visualize_state_list_ev = [np.round(x, 2) for x in relative_energy_ev]
 
+    plt.figure(figsize=(12, 8))
     plt.scatter(visualize_state_list_name, visualize_state_list_ev, s=900, marker="_", linewidth=2, zorder=3)
     [plt.text(x, y, str(y), ha="center", va="bottom") for x, y in zip(range(len(visualize_state_list_name)), visualize_state_list_ev)]
+    plt.xticks(rotation=45, ha='right')
     plt.ylabel("rel.energy [eV]")
     plt.tight_layout()
     plt.savefig('phokimo_state_energy.png')
     plt.show()
+    plt.clf()
 
     """ Solving ode """
     dEs = reactions.dEs(state_list_energy)
@@ -77,8 +80,10 @@ def main() -> None:
     plt.legend(visualize_state_list_name)
     plt.xlabel("time [fs]")
     plt.ylabel("Concentration")
+    plt.tight_layout()
     plt.savefig('phokimo_kinetics_state.png')
     plt.show()
+    plt.clf()
 
     """ Generate output TOML file """
 
