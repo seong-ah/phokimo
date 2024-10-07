@@ -1,59 +1,53 @@
 # PhoKiMo
 
+PhoKiMo is a general kinetic model based on rate law. By utilizing given mechanism on toml file, you can calculate the kinetic scheme of the reaction. This model is using calculation result of `terachem`.
 
+## Prerequisites
 
-## Getting started
-
-To make it easy for you to get started with GitLab, here's a list of recommended next steps.
-
-Already a pro? Just edit this README.md and make it your own. Want to make it easy? [Use the template at the bottom](#editing-this-readme)!
-
-## Add your files
-
-- [ ] [Create](https://docs.gitlab.com/ee/user/project/repository/web_editor.html#create-a-file) or [upload](https://docs.gitlab.com/ee/user/project/repository/web_editor.html#upload-a-file) files
-- [ ] [Add files using the command line](https://docs.gitlab.com/ee/gitlab-basics/add-file.html#add-a-file-using-the-command-line) or push an existing Git repository with the following command:
+Directory from the calculation path should look like the structure below. Numbering does not matter, but folder name should **ENDS** with the `folder_name` at the toml file.
 
 ```
-cd existing_repo
-git remote add origin https://git.rwth-aachen.de/bannwarthlab/phokimo.git
-git branch -M main
-git push -uf origin main
+calculation_path/
+├── 0000_aaa/
+│   └── sp/
+│       └── tc.out
+├── 0001_bbb/
+│   ├── sp/
+│   │   └── tc.out
+│   └── ground_sp/
+│       └── tc.out
+└── 0002_ccc/
+    └── sp/
+        └── tc.out
 ```
 
-## Integrate with your tools
+## How to run the kinetic model
 
-- [ ] [Set up project integrations](https://git.rwth-aachen.de/bannwarthlab/phokimo/-/settings/integrations)
+Kinetic model should be run on the cluster that has terachem output file.
 
-## Collaborate with your team
-
-- [ ] [Invite team members and collaborators](https://docs.gitlab.com/ee/user/project/members/)
-- [ ] [Create a new merge request](https://docs.gitlab.com/ee/user/project/merge_requests/creating_merge_requests.html)
-- [ ] [Automatically close issues from merge requests](https://docs.gitlab.com/ee/user/project/issues/managing_issues.html#closing-issues-automatically)
-- [ ] [Enable merge request approvals](https://docs.gitlab.com/ee/user/project/merge_requests/approvals/)
-- [ ] [Set auto-merge](https://docs.gitlab.com/ee/user/project/merge_requests/merge_when_pipeline_succeeds.html)
-
-## Test and Deploy
-
-Use the built-in continuous integration in GitLab.
-
-- [ ] [Get started with GitLab CI/CD](https://docs.gitlab.com/ee/ci/quick_start/index.html)
-- [ ] [Analyze your code for known vulnerabilities with Static Application Security Testing (SAST)](https://docs.gitlab.com/ee/user/application_security/sast/)
-- [ ] [Deploy to Kubernetes, Amazon EC2, or Amazon ECS using Auto Deploy](https://docs.gitlab.com/ee/topics/autodevops/requirements.html)
-- [ ] [Use pull-based deployments for improved Kubernetes management](https://docs.gitlab.com/ee/user/clusters/agent/)
-- [ ] [Set up protected environments](https://docs.gitlab.com/ee/ci/environments/protected_environments.html)
-
-
-## How to run the module
 ```
 python3 -m phokimo input.toml
 ```
+
+### Inputs
+
+`input.toml`: toml file that includes information of the target mechanism
+
+### Outputs
+
+`phokimo.toml`: 
+
+## How to dramw the mechansim diagram
+
+Drawing mechanism on the cluster is not supported, so it should be run independently on your local environment with the toml file.
+
 ```
-python3 -m phokimo.independent_graphing.py
+python3 -m phokimo.mechanism input.toml
 ```
 
 ## TOML file guideline
 
-Check /phokimo/used_tomls/ for the example tomle files and its guideline
+Check /phokimo/used_tomls/ for the example tomle files and its guideline.
 
 ## Some limitations and features to add
 

@@ -61,8 +61,8 @@ class TomlReader:
             self.sub_name_to_num = self.substate_name_num_dict()
             self.reverse_sub_name_to_num = self.reverse_substate_name_num_dict()
         
-        self.file_path = self.file_path_dict()
-
+        if os.path.exists(self.calculation_path()):
+            self.file_path = self.file_path_dict()
 
     def total_atoms(self) -> int:
         """Extract the number of total atoms in toml file.
