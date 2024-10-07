@@ -9,20 +9,20 @@ python3 -m phokimo input.toml
 ```
 
 ### Inputs 
-input.toml: toml file that includes all required information about running mechanism
+* 'input.toml': toml file that includes all required information about running mechanism
 
 ### Outputs
 All output files are stored at the same directory of input.toml file
 
-phokimo.toml: toml file with output data values
+* 'phokimo.toml': toml file with output data values
 
-phokimo_state_energy.png: scattered graph with energy values of states
+* 'phokimo_state_energy.png': scattered graph with energy values of states
 
-phokimo_kinetics_state.png: concentration change of each state vs time
+* 'phokimo_kinetics_state.png': concentration change of each state vs time
 
-phokimo_kinetics_spin.png: concentration change of each spin vs time
+* 'phokimo_kinetics_spin.png': concentration change of each spin vs time
 
-phokimo_expfitting.png: exponential fitting graph on the concentration change of each spin vs time
+* 'phokimo_expfitting.png': exponential fitting graph on the concentration change of each spin vs time
 
 
 ## How to draw the mechanism graph
