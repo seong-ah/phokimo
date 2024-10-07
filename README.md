@@ -1,13 +1,5 @@
 # PhoKiMo
 
-## Required conditions
-
-# Directory structure
-
-* Respect to calculation path, folder structure should follow the example below.
-
-directory (calculation_path in a toml)/ ├── 0000_s0min/ │ ├── excited_sp/ │ │ └── tc.out │ └── ground_sp/ │ └── tc.out ├── 0001_s1min/ │ └── ground_sp/ │ └── tc.out └── 0002_s1s0_ci/ └── excited_sp/ └── tc.out
-
 ## How to run the main module
 
 Run at the directory of input.toml file
