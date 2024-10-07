@@ -6,6 +6,7 @@ from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     import numpy as np
+    from scipy.integrate import odeint
 
 
 def hard_coded_ode(c: np.ndarray, t: np.ndarray, k: np.ndarray) -> tuple[np.ndarray, ...]:  # noQA: ARG001
@@ -34,18 +35,17 @@ def construct_ode(concentration: np.ndarray, t: np.ndarray, table: list[tuple], 
     Args:
         concentration (np.ndarray): starting concentration
         t (np.ndarray): time
-        table (list): table with information of possible reaction
-        rates (np.ndarray): reaction rates as N x N adjacency matrix. N: number of structures.
+        table (list[tuple]): table with information of elementary reactions
+        rates (np.ndarray): reaction rates as N x N adjacency matrix. N: number of states.
 
     Returns:
         tuple: concentration profile for ODEs.
     """
     odes = [0.0 for _ in concentration]
-    reactions = len(table)
 
-    for i in range(reactions): #originally forward and reverse independently but can be together
-        init = table[i][0]
-        final = table[i][1]
+    for reaction in table:
+        init = reaction[0]
+        final = reaction[1]
         odes[init] -= rates[init, final] * concentration[init]
         odes[final] += rates[init, final] * concentration[init]
     return tuple(odes)

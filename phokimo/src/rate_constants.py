@@ -178,7 +178,7 @@ class AdhocRelaxation(RelaxationTheory):
 
         .. math::
             k_\\mathrm{relax} = \\dfrac{k_\\mathrm{B}T}{h}
-            \\exp\\dfrac{-n\\Delta\\epsilon_\\mathrm{init}^\\mathrm{final}}{RT}
+            \\exp\\dfrac{n\\Delta\\epsilon_\\mathrm{init}^\\mathrm{final}}{RT}
 
         Args:
             dE (float): Energy difference between excited and ground structure in J/mol.

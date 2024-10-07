@@ -3,121 +3,94 @@
 from __future__ import annotations
 
 import os
+import sys
 from functools import partial
 
 import matplotlib.pyplot as plt
 import numpy as np
 from scipy.integrate import odeint
 
-from phokimo.src.additional_graphing import product_fraction, graph_builder, expfitting
+from phokimo.src.additional_functions import expfitting, product_ratio, dict_generator, toml_generator
 from phokimo.src.ode_builder import construct_ode
 from phokimo.src.rate_constants import RateCalculator
 from phokimo.src.terachem_values import Reactions, State_Values
 from phokimo.src.toml_reader import TomlReader
 from tcgm_lib.convert.converter import energy_unit
 
-
 def main() -> None:
     """Run the application."""
     """ Read data from toml file. """
+    
+    if len(sys.argv) < 2:
+        print("Usage: python3 -m phokimo filename.toml")
+        sys.exit(1)
 
-    # Get the directory of the currently executing Python script
-    current_dir = os.path.dirname(os.path.abspath(__file__))
-
-    # Assume the TOML file is in the same directory as the __main__.py
-    # Modify toml_file_path for suitable set-up toml file
-    toml_file_path = os.path.join(current_dir, "ethylene_s1_dynamics.toml")
-
+    toml_file = sys.argv[1]
+    current_dir = os.getcwd()
+    toml_file_path = os.path.join(current_dir, toml_file)
     toml_data = TomlReader(toml_file_path)
 
-    # Absolute path of calculation folders: assume that all folders have same structure in parallel (calculation_path/sp/tc.out)
-    calculation_path = toml_data.calculation_path()
-
     num_states = toml_data.num_states()
-
     visualize_state_list_name = toml_data.visualize_state_list_name()
-    start_conc = toml_data.start_conc()
-
-    rate_formula = RateCalculator()
-    reactions = Reactions(toml_data, rate_formula)
+    state_dict = toml_data.name_to_num
+    start_conc = toml_data.initial_conc()
 
     state_data = State_Values(toml_data)
-    state_list_energy = state_data.state_list_energy(calculation_path)
+    state_list_energy = state_data.state_relative_list_energy()
 
-    graph_group = toml_data.graph_group()
-    print("graph group", graph_group)
+    rate_formula = RateCalculator()
+    reactions = Reactions(toml_data, rate_formula, state_list_energy)
 
-    # state_list_energy[10] = 385600.0
-    # state_list_energy[10] = 367800.0
+    spin_list_dict = toml_data.spin_list_dict()
 
-    # rates = reactions.rates(state_list_energy)
-
-    spin_list_dict = toml_data.spin_list_dict(1)
-    reference_state = toml_data.reference_state()
-    reactant_name = toml_data.reactant_name()
-    reactant_num = toml_data.reactant_num()
-    product_list_name = toml_data.product_list_name()
-    product_list_num = toml_data.product_list_num()
-
-    " Simple print setting for debugging "
-
-    def custom_formatter(x):
-        if x == 0:
-            return "0"
-        else:
-            return f"{x:.4f}"
-
-    np.set_printoptions(formatter={"float_kind": custom_formatter})
-    np.set_printoptions(suppress=False, precision=2)
+    product_list_num = toml_data.product_nums
+    product_list_name_vis = toml_data.product_names_vis
 
     """ Plot Energies(eV) """
     
-    relative_energy_numpy = np.asarray(state_list_energy)
-    relative_energy_ev = energy_unit(relative_energy_numpy, "j/mol", "ev") # Relative energy in eV
-    # relative_energy_ev_zpe = [a + b for a, b in zip(relative_energy_ev, zpe)]
-    # relative_relative_energy_ev_zpe = np.asarray([x - relative_energy_ev_zpe[reference_state] for x in relative_energy_ev_zpe])
-    # relative_relative_energy_jmol_zpe = energy_unit(relative_relative_energy_ev_zpe, "ev", "j/mol")
+    relative_energy_ev = energy_unit(state_list_energy, "j/mol", "ev")
     visualize_state_list_ev = [np.round(x, 2) for x in relative_energy_ev]
-    print(visualize_state_list_name)
-    print(visualize_state_list_ev)
 
+    plt.figure(figsize=(12, 8))
     plt.scatter(visualize_state_list_name, visualize_state_list_ev, s=900, marker="_", linewidth=2, zorder=3)
-    [plt.text(x, y, str(y), ha="center", va="bottom", fontsize=10) for x, y in zip(range(len(visualize_state_list_name)), visualize_state_list_ev)]
-    plt.ylabel("rel.energy (eV)")
-
+    [plt.text(x, y, str(y), ha="center", va="bottom") for x, y in zip(range(len(visualize_state_list_name)), visualize_state_list_ev)]
+    plt.xticks(rotation=45, ha='right')
+    plt.ylabel("rel.energy [eV]")
+    plt.tight_layout()
+    plt.savefig('phokimo_state_energy.png')
     plt.show()
-
-    rates = reactions.rates(state_list_energy)
-
-    for i in range(num_states):
-        for j in range(num_states):
-            if rates[i][j] != 0:
-                print(visualize_state_list_name[i], visualize_state_list_name[j], f"{rates[i][j]:.2e}")
+    plt.clf()
 
     """ Solving ode """
-    table = toml_data.reaction_list()
-    print(table)
+    dEs = reactions.dEs(state_list_energy)
+    rates = reactions.rates(state_list_energy)
+
+    table = toml_data.reactions_num
+    table_name = toml_data.reactions_vis
 
     duration = toml_data.duration()
     spacing = 100000
     time = np.linspace(0, duration, spacing)
-
-    func = partial(construct_ode, table=table, rates=rates)
+    conc = np.zeros((spacing, num_states))
+    func = partial(construct_ode, table = table, rates=rates)
     conc = odeint(func, start_conc, time)
-
     x_axis = [i * 10 ** (15) for i in time] #fs
 
     plt.plot(x_axis, conc)
     plt.legend(visualize_state_list_name)
-    plt.xlabel("time (fs)")
+    plt.xlabel("time [fs]")
     plt.ylabel("Concentration")
+    plt.tight_layout()
+    plt.savefig('phokimo_kinetics_state.png')
     plt.show()
+    plt.clf()
 
-    expfitting(time, x_axis, spin_list_dict, conc)
-    # timeconstant(product_list_num, time, conc)
+    """ Generate output TOML file """
 
-    """ Plotting fractions """
-    product_fraction(spacing, time, x_axis, conc, product_list_name, product_list_num)
+    value_dict = dict_generator(visualize_state_list_name, state_list_energy, table_name, dEs, rates)
+    exp_dict = expfitting(time, x_axis, state_dict, spin_list_dict, conc)
+    frac_dict = product_ratio(spacing, conc, product_list_name_vis, product_list_num)
+    toml_generator(value_dict, exp_dict, frac_dict)
 
 if __name__ == "__main__":
     main()
