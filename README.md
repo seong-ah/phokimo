@@ -84,7 +84,7 @@ python3 -m phokimo.mechanism input.toml
 
 ## TOML file guideline
 
-Check /phokimo/used_tomls/ for the example tomle files and its guideline on the toml files.
+Check `/phokimo/used_tomls/` for the example tomle files and its guideline on the toml files.
 
 ## Some limitations and features to add
 - Overall, no reaction among multiple spin states (including triplet) have been tested
