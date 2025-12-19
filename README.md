@@ -1,3 +1,5 @@
+*Please note that my contributions are attributed to my previous institutional RWTH email, though the repository is now hosted through my personal account.*
+
 # PhoKiMo
 
 PhoKiMo is a general kinetic model based on rate law. By utilizing given mechanism on toml file, you can calculate the kinetic scheme of the reaction. This model is using calculation result of `terachem`.
